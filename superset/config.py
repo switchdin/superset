@@ -340,7 +340,7 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     # tables that users do not have access to.
     "ROW_LEVEL_SECURITY": False,
     # Enables Alerts and reports new implementation
-    "ALERT_REPORTS": False,
+    "ALERT_REPORTS": True,
 }
 
 # Set the default view to card/grid view if thumbnail support is enabled.
@@ -860,12 +860,12 @@ DB_CONNECTION_MUTATOR = None
 SQL_QUERY_MUTATOR = None
 
 # Enable / disable scheduled email reports
-ENABLE_SCHEDULED_EMAIL_REPORTS = False
+ENABLE_SCHEDULED_EMAIL_REPORTS = True
 
 # Enable / disable Alerts, where users can define custom SQL that
 # will send emails with screenshots of charts or dashboards periodically
 # if it meets the criteria
-ENABLE_ALERTS = False
+ENABLE_ALERTS = True
 
 # Used for Alerts/Reports (Feature flask ALERT_REPORTS) to set the size for the
 # sliding cron window size, should be synced with the celery beat config minus 1 second
