@@ -18,7 +18,7 @@
 
 set -eo pipefail
 
-REQUIREMENTS_LOCAL="/app/docker/requirements-local.txt"
+REQUIREMENTS_LOCAL="/app/docker/local.txt"
 # If Cypress run – overwrite the password for admin and export env variables
 if [ "$CYPRESS_CONFIG" == "true" ]; then
     export SUPERSET_CONFIG=tests.superset_test_config
@@ -39,7 +39,13 @@ fi
 if [[ "${1}" == "worker" ]]; then
   echo "Starting Celery worker..."
   celery worker --app=superset.tasks.celery_app:app -Ofair -l INFO
+elif [[ "${1}" == "beat" ]]; then
+  echo "Starting Celery beat..."
+  celery beat --app=superset.tasks.celery_app:app --pidfile /tmp/celerybeat.pid -l INFO
 elif [[ "${1}" == "app" ]]; then
   echo "Starting web app..."
   flask run -p 8088 --with-threads --reload --debugger --host=0.0.0.0
+elif [[ "${1}" == "app-gunicorn" ]]; then
+  echo "Starting web app..."
+  /app/docker/docker-entrypoint.sh
 fi
