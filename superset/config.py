@@ -124,7 +124,7 @@ SUPERSET_WORKERS = 2  # deprecated
 SUPERSET_CELERY_WORKERS = 32  # deprecated
 
 SUPERSET_WEBSERVER_PROTOCOL = "http"
-SUPERSET_WEBSERVER_ADDRESS = "0.0.0.0"
+SUPERSET_WEBSERVER_ADDRESS = "172.17.0.1"
 SUPERSET_WEBSERVER_PORT = 8088
 
 # This is an important setting, and should be lower than your
@@ -936,7 +936,7 @@ WEBDRIVER_OPTION_ARGS = [
 ]
 
 # The base URL to query for accessing the user interface
-WEBDRIVER_BASEURL = "http://0.0.0.0:8080/"
+WEBDRIVER_BASEURL = "http://172.17.0.1:8088/"
 # The base URL for the email report hyperlinks.
 WEBDRIVER_BASEURL_USER_FRIENDLY = WEBDRIVER_BASEURL
 # Time in seconds, selenium will wait for the page to load
