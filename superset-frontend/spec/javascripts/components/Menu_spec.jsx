@@ -71,7 +71,7 @@ const defaultProps = {
     ],
     brand: {
       path: '/superset/profile/admin/',
-      icon: '/static/assets/images/superset-logo-horiz.png',
+      icon: '/static/assets/images/switchdin-logo-horiz.png',
       alt: 'Superset',
       width: '126',
     },
