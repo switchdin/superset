@@ -74,7 +74,7 @@ RUN cd /app/superset-frontend \
 # Final lean image...
 ######################################################################
 ARG PY_VER=3.7.9
-FROM python:${PY_VER} AS lean
+FROM python:${PY_VER}-slim AS lean
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -119,9 +119,30 @@ EXPOSE ${SUPERSET_PORT}
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
 ######################################################################
+# ESR image...
+######################################################################
+FROM lean AS esr
+
+USER root
+
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y firefox-esr wget \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV GECKODRIVER_VERSION=0.29.0
+RUN wget -q https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/geckodriver-v${GECKODRIVER_VERSION}-linux64.tar.gz && \
+    tar -x geckodriver -zf geckodriver-v${GECKODRIVER_VERSION}-linux64.tar.gz -O > /usr/bin/geckodriver && \
+    chmod 755 /usr/bin/geckodriver && \
+    rm geckodriver-v${GECKODRIVER_VERSION}-linux64.tar.gz
+
+RUN pip install --no-cache gevent psycopg2 redis
+
+USER superset
+
+######################################################################
 # Dev image...
 ######################################################################
-FROM lean AS dev
+FROM esr AS dev
 
 COPY ./requirements/*.txt ./docker/requirements-*.txt/ /app/requirements/
 
