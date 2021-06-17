@@ -24,7 +24,7 @@ else
         --bind  "0.0.0.0:${SUPERSET_PORT}" \
         --access-logfile '-' \
         --error-logfile '-' \
-        --workers 1 \
+        --workers 4 \
         --worker-class gthread \
         --threads 20 \
         --timeout 60 \
