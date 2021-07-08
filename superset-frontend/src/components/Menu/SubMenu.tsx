@@ -33,6 +33,8 @@ const StyledHeader = styled.header`
     margin-right: ${({ theme }) => theme.gridUnit * 3}px;
   }
   .navbar-right {
+    display: flex;
+    align-items: center;
     padding: 8px 0;
     margin-right: 0;
   }
@@ -141,6 +143,7 @@ const SubMenu: React.FunctionComponent<SubMenuProps> = props => {
                 return (
                   <React.Fragment key={tab.label}>
                     <li
+                      role="tab"
                       data-test={tab['data-test']}
                       className={tab.name === props.activeChild ? 'active' : ''}
                     >
@@ -158,6 +161,7 @@ const SubMenu: React.FunctionComponent<SubMenuProps> = props => {
                     className={cx('no-router', {
                       active: tab.name === props.activeChild,
                     })}
+                    role="tab"
                   >
                     <a href={tab.url} onClick={tab.onClick}>
                       {tab.label}

@@ -55,7 +55,8 @@ body {
   height: 100%;
   position: relative;
   background-color: @lightest;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
 
   > .ant-tabs-tabpane {
     position: absolute;
@@ -293,12 +294,14 @@ div.Workspace {
   .queryPane {
     flex: 1 1 auto;
     padding-left: 10px;
-    overflow: visible;
+    overflow-y: visible;
+    overflow-x: scroll;
   }
 
   .schemaPane-enter-done,
   .schemaPane-exit {
     transform: translateX(0);
+    z-index: 7;
   }
 
   .schemaPane-exit-active {
@@ -360,23 +363,6 @@ div.tablePopover {
   &:hover {
     opacity: 1 !important;
   }
-}
-
-.ResultSetControls {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  position: fixed;
-}
-
-.ResultSetButtons {
-  display: grid;
-  grid-auto-flow: column;
-  padding-right: 8px;
-}
-
-.result-set-error-message {
-  padding-top: 16px;
 }
 
 .ace_editor.ace_editor {

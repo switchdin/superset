@@ -47,6 +47,7 @@ const propTypes = {
   table_name: PropTypes.string,
   vizType: PropTypes.string.isRequired,
   form_data: PropTypes.object,
+  ownState: PropTypes.object,
   standalone: PropTypes.number,
   timeout: PropTypes.number,
   refreshOverlayVisible: PropTypes.bool,
@@ -189,6 +190,7 @@ const ExploreChartPanel = props => {
         <ChartContainer
           width={Math.floor(chartWidth)}
           height={newHeight}
+          ownState={props.ownState}
           annotationData={chart.annotationData}
           chartAlert={chart.chartAlert}
           chartStackTrace={chart.chartStackTrace}
@@ -199,7 +201,6 @@ const ExploreChartPanel = props => {
           errorMessage={props.errorMessage}
           formData={props.form_data}
           onQuery={props.onQuery}
-          owners={props?.slice?.owners}
           queriesResponse={chart.queriesResponse}
           refreshOverlayVisible={props.refreshOverlayVisible}
           setControlValue={props.actions.setControlValue}
@@ -237,6 +238,7 @@ const ExploreChartPanel = props => {
 
   const header = (
     <ConnectedExploreChartHeader
+      ownState={props.ownState}
       actions={props.actions}
       addHistory={props.addHistory}
       can_overwrite={props.can_overwrite}
@@ -273,6 +275,7 @@ const ExploreChartPanel = props => {
         >
           {panelBody}
           <DataTablesPane
+            ownState={props.ownState}
             queryFormData={props.chart.latestQueryFormData}
             tableSectionHeight={tableSectionHeight}
             onCollapseChange={onCollapseChange}
