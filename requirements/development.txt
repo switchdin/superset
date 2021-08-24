@@ -161,6 +161,7 @@ pillow==7.2.0
 # via -r requirements/development.in
 # via apache-superset
 # via flask-appbuilder
+psycopg2==2.8.6
 psycopg2-binary==2.8.5
 # via -r requirements/development.in
 # via retry
