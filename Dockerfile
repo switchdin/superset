@@ -137,7 +137,7 @@ RUN wget -q https://github.com/mozilla/geckodriver/releases/download/v${GECKODRI
     rm geckodriver-v${GECKODRIVER_VERSION}-linux64.tar.gz
 
 
-RUN pip install --no-cache gevent psycopg2==2.8.6 redis
+RUN pip install --no-cache gevent psycopg2==2.8.5 redis
 
 USER superset
 
