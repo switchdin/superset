@@ -44,7 +44,6 @@ pillow==7.2.0
 # via -r requirements/development.in
 # via apache-superset
 # via flask-appbuilder
-psycopg2==2.8.6
     # via -r requirements/development.in
 progress==1.6
     # via -r requirements/development.in
