@@ -24,9 +24,11 @@ from flask import current_app, flash, Markup, redirect
 from flask_appbuilder import CompactCRUDMixin, expose
 from flask_appbuilder.actions import action
 from flask_appbuilder.fieldwidgets import Select2Widget
+from flask_appbuilder.hooks import before_request
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_appbuilder.security.decorators import has_access
 from flask_babel import gettext as __, lazy_gettext as _
+from werkzeug.exceptions import NotFound
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from wtforms.validators import Regexp
 
@@ -51,9 +53,7 @@ from superset.views.base import (
 logger = logging.getLogger(__name__)
 
 
-class TableColumnInlineView(  # pylint: disable=too-many-ancestors
-    CompactCRUDMixin, SupersetModelView
-):
+class TableColumnInlineView(CompactCRUDMixin, SupersetModelView):
     datamodel = SQLAInterface(models.TableColumn)
     # TODO TODO, review need for this on related_views
     class_permission_name = "Dataset"
@@ -194,9 +194,7 @@ class TableColumnInlineView(  # pylint: disable=too-many-ancestors
             check_ownership(item.table)
 
 
-class SqlMetricInlineView(  # pylint: disable=too-many-ancestors
-    CompactCRUDMixin, SupersetModelView
-):
+class SqlMetricInlineView(CompactCRUDMixin, SupersetModelView):
     datamodel = SQLAInterface(models.SqlMetric)
     class_permission_name = "Dataset"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP
@@ -299,9 +297,7 @@ class RowLevelSecurityListWidget(
         super().__init__(**kwargs)
 
 
-class RowLevelSecurityFiltersModelView(  # pylint: disable=too-many-ancestors
-    SupersetModelView, DeleteMixin
-):
+class RowLevelSecurityFiltersModelView(SupersetModelView, DeleteMixin):
     datamodel = SQLAInterface(models.RowLevelSecurityFilter)
 
     list_widget = cast(SupersetListWidget, RowLevelSecurityListWidget)
@@ -368,6 +364,15 @@ class RowLevelSecurityFiltersModelView(  # pylint: disable=too-many-ancestors
     if app.config["RLS_FORM_QUERY_REL_FIELDS"]:
         add_form_query_rel_fields = app.config["RLS_FORM_QUERY_REL_FIELDS"]
         edit_form_query_rel_fields = add_form_query_rel_fields
+
+    @staticmethod
+    def is_enabled() -> bool:
+        return is_feature_enabled("ROW_LEVEL_SECURITY")
+
+    @before_request
+    def ensure_enabled(self) -> None:
+        if not self.is_enabled():
+            raise NotFound()
 
 
 class TableModelView(  # pylint: disable=too-many-ancestors
@@ -550,7 +555,7 @@ class TableModelView(  # pylint: disable=too-many-ancestors
     @action(
         "refresh", __("Refresh Metadata"), __("Refresh column metadata"), "fa-refresh"
     )
-    def refresh(  # pylint: disable=no-self-use, too-many-branches
+    def refresh(  # pylint: disable=no-self-use,
         self, tables: Union["TableModelView", List["TableModelView"]]
     ) -> FlaskResponse:
         logger.warning(

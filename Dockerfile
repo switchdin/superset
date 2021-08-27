@@ -64,7 +64,7 @@ RUN /frontend-mem-nag.sh \
 
 # Next, copy in the rest and let webpack do its thing
 COPY ./superset-frontend /app/superset-frontend
-# This is BY FAR the most expensive step (thanks Terser!)
+# This seems to be the most expensive step
 RUN cd /app/superset-frontend \
         && npm run ${BUILD_CMD} \
         && rm -rf node_modules
@@ -84,8 +84,8 @@ ENV LANG=C.UTF-8 \
     SUPERSET_HOME="/app/superset_home" \
     SUPERSET_PORT=8088
 
-RUN useradd --user-group --no-create-home --no-log-init --shell /bin/bash superset \
-        && mkdir -p ${SUPERSET_HOME} ${PYTHONPATH} \
+RUN mkdir -p ${PYTHONPATH} \
+        && useradd --user-group -d ${SUPERSET_HOME} -m --no-log-init --shell /bin/bash superset \
         && apt-get update -y \
         && apt-get install -y --no-install-recommends \
             build-essential \

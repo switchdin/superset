@@ -165,13 +165,14 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         "date_add('day', 1, CAST({col} AS TIMESTAMP))))",
     }
 
-    custom_errors = {
+    custom_errors: Dict[Pattern[str], Tuple[str, SupersetErrorType, Dict[str, Any]]] = {
         COLUMN_DOES_NOT_EXIST_REGEX: (
             __(
                 'We can\'t seem to resolve the column "%(column_name)s" at '
                 "line %(location)s.",
             ),
             SupersetErrorType.COLUMN_DOES_NOT_EXIST_ERROR,
+            {},
         ),
         TABLE_DOES_NOT_EXIST_REGEX: (
             __(
@@ -179,6 +180,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
                 "A valid table must be used to run this query.",
             ),
             SupersetErrorType.TABLE_DOES_NOT_EXIST_ERROR,
+            {},
         ),
         SCHEMA_DOES_NOT_EXIST_REGEX: (
             __(
@@ -186,14 +188,17 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
                 "A valid schema must be used to run this query.",
             ),
             SupersetErrorType.SCHEMA_DOES_NOT_EXIST_ERROR,
+            {},
         ),
         CONNECTION_ACCESS_DENIED_REGEX: (
             __('Either the username "%(username)s" or the password is incorrect.'),
             SupersetErrorType.CONNECTION_ACCESS_DENIED_ERROR,
+            {},
         ),
         CONNECTION_INVALID_HOSTNAME_REGEX: (
             __('The hostname "%(hostname)s" cannot be resolved.'),
             SupersetErrorType.CONNECTION_INVALID_HOSTNAME_ERROR,
+            {},
         ),
         CONNECTION_HOST_DOWN_REGEX: (
             __(
@@ -201,14 +206,17 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
                 "reached on port %(port)s."
             ),
             SupersetErrorType.CONNECTION_HOST_DOWN_ERROR,
+            {},
         ),
         CONNECTION_PORT_CLOSED_REGEX: (
             __('Port %(port)s on hostname "%(hostname)s" refused the connection.'),
             SupersetErrorType.CONNECTION_PORT_CLOSED_ERROR,
+            {},
         ),
         CONNECTION_UNKNOWN_DATABASE_ERROR: (
             __('Unable to connect to catalog named "%(catalog_name)s".'),
             SupersetErrorType.CONNECTION_UNKNOWN_DATABASE_ERROR,
+            {},
         ),
     }
 
@@ -333,7 +341,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         )
 
     @classmethod
-    def _parse_structural_column(  # pylint: disable=too-many-locals,too-many-branches
+    def _parse_structural_column(  # pylint: disable=too-many-locals
         cls,
         parent_column_name: str,
         parent_data_type: str,
@@ -647,9 +655,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         )
 
     @classmethod
-    def estimate_statement_cost(  # pylint: disable=too-many-locals
-        cls, statement: str, cursor: Any
-    ) -> Dict[str, Any]:
+    def estimate_statement_cost(cls, statement: str, cursor: Any) -> Dict[str, Any]:
         """
         Run a SQL query that estimates the cost of a given statement.
 
@@ -741,7 +747,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         if tt == utils.TemporalType.DATE:
             return f"""from_iso8601_date('{dttm.date().isoformat()}')"""
         if tt == utils.TemporalType.TIMESTAMP:
-            return f"""from_iso8601_timestamp('{dttm.isoformat(timespec="microseconds")}')"""  # pylint: disable=line-too-long
+            return f"""from_iso8601_timestamp('{dttm.isoformat(timespec="microseconds")}')"""  # pylint: disable=line-too-long,useless-suppression
         return None
 
     @classmethod
@@ -769,7 +775,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         return datasource_names
 
     @classmethod
-    def expand_data(  # pylint: disable=too-many-locals,too-many-branches
+    def expand_data(  # pylint: disable=too-many-locals
         cls, columns: List[Dict[Any, Any]], data: List[Dict[Any, Any]]
     ) -> Tuple[List[Dict[Any, Any]], List[Dict[Any, Any]], List[Dict[Any, Any]]]:
         """
@@ -917,6 +923,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         :param schema: Schema name
         :param table: Table (view) name
         """
+        # pylint: disable=import-outside-toplevel
         from pyhive.exc import DatabaseError
 
         engine = cls.get_engine(database, schema)
@@ -1204,7 +1211,7 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
         return super().is_readonly_query(parsed_query) or parsed_query.is_show()
 
     @classmethod
-    def get_column_spec(  # type: ignore
+    def get_column_spec(
         cls,
         native_type: Optional[str],
         source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
@@ -1226,3 +1233,15 @@ class PrestoEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-metho
             return column_spec
 
         return super().get_column_spec(native_type)
+
+    @classmethod
+    def has_implicit_cancel(cls) -> bool:
+        """
+        Return True if the live cursor handles the implicit cancelation of the query,
+        False otherise.
+
+        :return: Whether the live cursor implicitly cancels the query
+        :see: handle_cursor
+        """
+
+        return True
