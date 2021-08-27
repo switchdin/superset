@@ -35,7 +35,11 @@ import {
   updateComponents,
   handleComponentDrop,
 } from '../actions/dashboardLayout';
-import { setDirectPathToChild } from '../actions/dashboardState';
+import {
+  setDirectPathToChild,
+  setActiveTabs,
+  setFullSizeChartId,
+} from '../actions/dashboardState';
 
 const propTypes = {
   id: PropTypes.string,
@@ -59,33 +63,11 @@ const propTypes = {
 };
 
 const defaultProps = {
-  directPathToChild: [],
-  directPathLastUpdated: 0,
   isComponentVisible: true,
 };
 
-/**
- * Selects the chart scope of the filter input that has focus.
- *
- * @returns {{chartId: number, scope: { scope: string[], immune: string[] }} | null }
- * the scope of the currently focused filter, if any
- */
-function selectFocusedFilterScope(dashboardState, dashboardFilters) {
-  if (!dashboardState.focusedFilterField) return null;
-  const { chartId, column } = dashboardState.focusedFilterField;
-  return {
-    chartId,
-    scope: dashboardFilters[chartId].scopes[column],
-  };
-}
-
 function mapStateToProps(
-  {
-    dashboardLayout: undoableLayout,
-    dashboardState,
-    dashboardInfo,
-    dashboardFilters,
-  },
+  { dashboardLayout: undoableLayout, dashboardState, dashboardInfo },
   ownProps,
 ) {
   const dashboardLayout = undoableLayout.present;
@@ -95,16 +77,9 @@ function mapStateToProps(
     component,
     parentComponent: dashboardLayout[parentId],
     editMode: dashboardState.editMode,
-    undoLength: undoableLayout.past.length,
-    redoLength: undoableLayout.future.length,
     filters: getActiveFilters(),
-    directPathToChild: dashboardState.directPathToChild,
-    directPathLastUpdated: dashboardState.directPathLastUpdated,
     dashboardId: dashboardInfo.id,
-    focusedFilterScope: selectFocusedFilterScope(
-      dashboardState,
-      dashboardFilters,
-    ),
+    fullSizeChartId: dashboardState.fullSizeChartId,
   };
 
   // rows and columns need more data about their child dimensions
@@ -134,6 +109,8 @@ function mapDispatchToProps(dispatch) {
       updateComponents,
       handleComponentDrop,
       setDirectPathToChild,
+      setFullSizeChartId,
+      setActiveTabs,
       logEvent,
     },
     dispatch,
