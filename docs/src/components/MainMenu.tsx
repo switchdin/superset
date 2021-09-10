@@ -22,7 +22,7 @@ import { Link } from 'gatsby';
 import { MenuOutlined, GithubOutlined } from '@ant-design/icons';
 import { css } from '@emotion/core';
 import { getCurrentPath, mq } from '../utils';
-import logoSvg from '../images/switchdin-logo-horiz.svg';
+import logoSvg from '../images/superset-logo-horiz.svg';
 
 const menuResponsiveIndex = 1;
 

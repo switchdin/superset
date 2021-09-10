@@ -24,10 +24,10 @@ else
         --bind  "0.0.0.0:${SUPERSET_PORT}" \
         --access-logfile '-' \
         --error-logfile '-' \
-        --workers 4 \
+        --workers 1 \
         --worker-class gthread \
         --threads 20 \
-        --timeout 60 \
+        --timeout ${GUNICORN_TIMEOUT:-60} \
         --limit-request-line 0 \
         --limit-request-field_size 0 \
         "${FLASK_APP}"

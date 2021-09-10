@@ -23,6 +23,7 @@
 import logging
 import os
 from datetime import timedelta
+from typing import Optional
 
 from cachelib.file import FileSystemCache
 from celery.schedules import crontab
@@ -30,7 +31,7 @@ from celery.schedules import crontab
 logger = logging.getLogger()
 
 
-def get_env_variable(var_name, default=None):
+def get_env_variable(var_name: str, default: Optional[str] = None) -> str:
     """Get the environment variable or raise exception."""
     try:
         return os.environ[var_name]
@@ -63,41 +64,30 @@ SQLALCHEMY_DATABASE_URI = "%s://%s:%s@%s:%s/%s" % (
 
 REDIS_HOST = get_env_variable("REDIS_HOST")
 REDIS_PORT = get_env_variable("REDIS_PORT")
-REDIS_CELERY_DB = get_env_variable("REDIS_CELERY_DB", 0)
-REDIS_RESULTS_DB = get_env_variable("REDIS_RESULTS_DB", 1)
+REDIS_CELERY_DB = get_env_variable("REDIS_CELERY_DB", "0")
+REDIS_RESULTS_DB = get_env_variable("REDIS_RESULTS_DB", "1")
 
 RESULTS_BACKEND = FileSystemCache("/app/superset_home/sqllab")
 
 
 class CeleryConfig(object):
     BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
-    CELERY_IMPORTS = ('superset.sql_lab', "superset.tasks", "superset.tasks.thumbnails", )
+    CELERY_IMPORTS = ("superset.sql_lab", "superset.tasks")
     CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_RESULTS_DB}"
     CELERYD_LOG_LEVEL = "DEBUG"
     CELERYD_PREFETCH_MULTIPLIER = 1
     CELERY_ACKS_LATE = False
-    CELERY_TASK_PROTOCOL = 1
-    CELERY_ANNOTATIONS = {
-        'sql_lab.get_sql_results': {
-            'rate_limit': '100/s',
-        },
-        'email_reports.send': {
-            'rate_limit': '1/s',
-            'time_limit': 600,
-            'soft_time_limit': 600,
-            'ignore_result': True,
-        },
-    }
     CELERYBEAT_SCHEDULE = {
-        'reports.scheduler': {
-            'task': 'reports.scheduler',
-            'schedule': crontab(minute='*', hour='*'),
+        "reports.scheduler": {
+            "task": "reports.scheduler",
+            "schedule": crontab(minute="*", hour="*"),
         },
-        'reports.prune_log': {
-            'task': 'reports.prune_log',
-            'schedule': crontab(minute=0, hour=0),
+        "reports.prune_log": {
+            "task": "reports.prune_log",
+            "schedule": crontab(minute=10, hour=0),
         },
     }
+
 
 CELERY_CONFIG = CeleryConfig
 

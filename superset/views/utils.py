@@ -24,7 +24,7 @@ from urllib import parse
 import msgpack
 import pyarrow as pa
 import simplejson as json
-from flask import g, request
+from flask import g, has_request_context, request
 from flask_appbuilder.security.sqla import models as ab_models
 from flask_appbuilder.security.sqla.models import User
 from flask_babel import _
@@ -40,7 +40,7 @@ from superset.exceptions import (
     SupersetException,
     SupersetSecurityException,
 )
-from superset.extensions import cache_manager
+from superset.extensions import cache_manager, security_manager
 from superset.legacy import update_time_range
 from superset.models.core import Database
 from superset.models.dashboard import Dashboard
@@ -62,16 +62,18 @@ if not app.config["ENABLE_JAVASCRIPT_CONTROLS"]:
 
 def bootstrap_user_data(user: User, include_perms: bool = False) -> Dict[str, Any]:
     if user.is_anonymous:
-        return {}
-    payload = {
-        "username": user.username,
-        "firstName": user.first_name,
-        "lastName": user.last_name,
-        "userId": user.id,
-        "isActive": user.is_active,
-        "createdOn": user.created_on.isoformat(),
-        "email": user.email,
-    }
+        payload = {}
+        user.roles = (security_manager.find_role("Public"),)
+    else:
+        payload = {
+            "username": user.username,
+            "firstName": user.first_name,
+            "lastName": user.last_name,
+            "userId": user.id,
+            "isActive": user.is_active,
+            "createdOn": user.created_on.isoformat(),
+            "email": user.email,
+        }
 
     if include_perms:
         roles, permissions = get_permissions(user)
@@ -87,20 +89,15 @@ def get_permissions(
     if not user.roles:
         raise AttributeError("User object does not have roles")
 
-    roles = {}
+    roles = defaultdict(list)
     permissions = defaultdict(set)
+
     for role in user.roles:
-        perms = set()
-        for perm in role.permissions:
-            if perm.permission and perm.view_menu:
-                perms.add((perm.permission.name, perm.view_menu.name))
-                if perm.permission.name in ("datasource_access", "database_access"):
-                    permissions[perm.permission.name].add(perm.view_menu.name)
-        roles[role.name] = [
-            [perm.permission.name, perm.view_menu.name]
-            for perm in role.permissions
-            if perm.permission and perm.view_menu
-        ]
+        permissions_ = security_manager.get_role_permissions(role)
+        for permission in permissions_:
+            if permission[0] in ("datasource_access", "database_access"):
+                permissions[permission[0]].add(permission[1])
+            roles[role.name].append([permission[0], permission[1]])
 
     return roles, permissions
 
@@ -132,44 +129,53 @@ def loads_request_json(request_json_data: str) -> Dict[Any, Any]:
 def get_form_data(  # pylint: disable=too-many-locals
     slice_id: Optional[int] = None, use_slice_data: bool = False
 ) -> Tuple[Dict[str, Any], Optional[Slice]]:
-    form_data = {}
-    # chart data API requests are JSON
-    request_json_data = (
-        request.json["queries"][0]
-        if request.is_json and "queries" in request.json
-        else None
-    )
-    request_form_data = request.form.get("form_data")
-    request_args_data = request.args.get("form_data")
-    if request_json_data:
-        form_data.update(request_json_data)
-    if request_form_data:
-        parsed_form_data = loads_request_json(request_form_data)
-        # some chart data api requests are form_data
-        queries = parsed_form_data.get("queries")
-        if isinstance(queries, list):
-            form_data.update(queries[0])
-        else:
-            form_data.update(parsed_form_data)
-    # request params can overwrite the body
-    if request_args_data:
-        form_data.update(loads_request_json(request_args_data))
+    form_data: Dict[str, Any] = {}
 
-    # Fallback to using the Flask globals (used for cache warmup) if defined.
+    if has_request_context():  # type: ignore
+        # chart data API requests are JSON
+        request_json_data = (
+            request.json["queries"][0]
+            if request.is_json and "queries" in request.json
+            else None
+        )
+
+        add_sqllab_custom_filters(form_data)
+
+        request_form_data = request.form.get("form_data")
+        request_args_data = request.args.get("form_data")
+        if request_json_data:
+            form_data.update(request_json_data)
+        if request_form_data:
+            parsed_form_data = loads_request_json(request_form_data)
+            # some chart data api requests are form_data
+            queries = parsed_form_data.get("queries")
+            if isinstance(queries, list):
+                form_data.update(queries[0])
+            else:
+                form_data.update(parsed_form_data)
+        # request params can overwrite the body
+        if request_args_data:
+            form_data.update(loads_request_json(request_args_data))
+
+    # Fallback to using the Flask globals (used for cache warmup and async queries)
     if not form_data and hasattr(g, "form_data"):
         form_data = getattr(g, "form_data")
+        # chart data API requests are JSON
+        json_data = form_data["queries"][0] if "queries" in form_data else {}
+        form_data.update(json_data)
 
-    url_id = request.args.get("r")
-    if url_id:
-        saved_url = db.session.query(models.Url).filter_by(id=url_id).first()
-        if saved_url:
-            url_str = parse.unquote_plus(
-                saved_url.url.split("?")[1][10:], encoding="utf-8"
-            )
-            url_form_data = loads_request_json(url_str)
-            # allow form_date in request override saved url
-            url_form_data.update(form_data)
-            form_data = url_form_data
+    if has_request_context():  # type: ignore
+        url_id = request.args.get("r")
+        if url_id:
+            saved_url = db.session.query(models.Url).filter_by(id=url_id).first()
+            if saved_url:
+                url_str = parse.unquote_plus(
+                    saved_url.url.split("?")[1][10:], encoding="utf-8"
+                )
+                url_form_data = loads_request_json(url_str)
+                # allow form_date in request override saved url
+                url_form_data.update(form_data)
+                form_data = url_form_data
 
     form_data = {k: v for k, v in form_data.items() if k not in REJECTED_FORM_DATA_KEYS}
 
@@ -199,6 +205,26 @@ def get_form_data(  # pylint: disable=too-many-locals
         )
 
     return form_data, slc
+
+
+def add_sqllab_custom_filters(form_data: Dict[Any, Any]) -> Any:
+    """
+    SQLLab can include a "filters" attribute in the templateParams.
+    The filters attribute is a list of filters to include in the
+    request. Useful for testing templates in SQLLab.
+    """
+    try:
+        data = json.loads(request.data)
+        if isinstance(data, dict):
+            params_str = data.get("templateParams")
+            if isinstance(params_str, str):
+                params = json.loads(params_str)
+                if isinstance(params, dict):
+                    filters = params.get("_filters")
+                    if filters:
+                        form_data.update({"filters": filters})
+    except (TypeError, json.JSONDecodeError):
+        data = {}
 
 
 def get_datasource_info(
@@ -301,7 +327,7 @@ def get_time_range_endpoints(
             if not slc:
                 slc = db.session.query(Slice).filter_by(id=slice_id).one_or_none()
 
-            if slc:
+            if slc and slc.datasource:
                 endpoints = slc.datasource.database.get_extra().get(
                     "time_range_endpoints"
                 )
@@ -544,7 +570,7 @@ def check_slice_perms(_self: Any, slice_id: int) -> None:
 
     form_data, slc = get_form_data(slice_id, use_slice_data=True)
 
-    if slc:
+    if slc and slc.datasource:
         try:
             viz_obj = get_viz(
                 datasource_type=slc.datasource.type,

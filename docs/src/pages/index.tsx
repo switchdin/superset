@@ -38,7 +38,7 @@ import Layout from '../components/layout';
 import DbImage from '../components/DbImage';
 import 'antd/dist/antd.css';
 import SEO from '../components/seo';
-import logo from '../images/switchdin-logo-horiz-apache.svg';
+import logo from '../images/superset-logo-horiz-apache.svg';
 import { mq } from '../utils';
 
 const { colors } = supersetTheme;
