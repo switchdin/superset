@@ -72,23 +72,30 @@ RESULTS_BACKEND = FileSystemCache("/app/superset_home/sqllab")
 
 class CeleryConfig(object):
     BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
-    CELERY_IMPORTS = ("superset.sql_lab", "superset.tasks")
+    CELERY_IMPORTS = ('superset.sql_lab', "superset.tasks", "superset.tasks.thumbnails", )
     CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_RESULTS_DB}"
-    CELERYD_LOG_LEVEL = "DEBUG"
-    CELERYD_PREFETCH_MULTIPLIER = 1
-    CELERY_ACKS_LATE = False
-    CELERYBEAT_SCHEDULE = {
-        "reports.scheduler": {
-            "task": "reports.scheduler",
-            "schedule": crontab(minute="*", hour="*"),
+    CELERY_TASK_PROTOCOL = 1
+    CELERY_ANNOTATIONS = {
+        'sql_lab.get_sql_results': {
+            'rate_limit': '100/s',
         },
-        "reports.prune_log": {
-            "task": "reports.prune_log",
-            "schedule": crontab(minute=10, hour=0),
+        'email_reports.send': {
+            'rate_limit': '1/s',
+            'time_limit': 600,
+            'soft_time_limit': 600,
+            'ignore_result': True,
         },
     }
-
-
+    CELERYBEAT_SCHEDULE = {
+        'reports.scheduler': {
+            'task': 'reports.scheduler',
+            'schedule': crontab(minute='*', hour='*'),
+        },
+        'reports.prune_log': {
+            'task': 'reports.prune_log',
+            'schedule': crontab(minute=0, hour=0),
+        },
+    }
 CELERY_CONFIG = CeleryConfig
 
 FEATURE_FLAGS = {"ALERT_REPORTS": True}

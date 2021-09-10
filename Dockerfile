@@ -74,7 +74,7 @@ RUN cd /app/superset-frontend \
 # Final lean image...
 ######################################################################
 ARG PY_VER=3.7.9
-FROM python:${PY_VER} AS lean
+FROM python:${PY_VER}-slim AS lean
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -120,35 +120,56 @@ EXPOSE ${SUPERSET_PORT}
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
 ######################################################################
-# Dev image...
+# ESR image...
 ######################################################################
-FROM lean AS dev
-ARG GECKODRIVER_VERSION=v0.28.0
-ARG FIREFOX_VERSION=88.0
-
-COPY ./requirements/*.txt ./docker/requirements-*.txt/ /app/requirements/
+FROM lean AS esr
 
 USER root
 
-RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends libnss3 libdbus-glib-1-2 libgtk-3-0 libx11-xcb1
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y firefox-esr wget \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install GeckoDriver WebDriver
-RUN wget https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz -O /tmp/geckodriver.tar.gz && \
-    tar xvfz /tmp/geckodriver.tar.gz -C /tmp && \
-    mv /tmp/geckodriver /usr/local/bin/geckodriver && \
-    rm /tmp/geckodriver.tar.gz
+ENV GECKODRIVER_VERSION=0.29.0
+RUN wget -q https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/geckodriver-v${GECKODRIVER_VERSION}-linux64.tar.gz && \
+    tar -x geckodriver -zf geckodriver-v${GECKODRIVER_VERSION}-linux64.tar.gz -O > /usr/bin/geckodriver && \
+    chmod 755 /usr/bin/geckodriver && \
+    rm geckodriver-v${GECKODRIVER_VERSION}-linux64.tar.gz
 
-# Install Firefox
-RUN wget https://download-installer.cdn.mozilla.net/pub/firefox/releases/${FIREFOX_VERSION}/linux-x86_64/en-US/firefox-${FIREFOX_VERSION}.tar.bz2 -O /opt/firefox.tar.bz2 && \
-    tar xvf /opt/firefox.tar.bz2 -C /opt && \
-    ln -s /opt/firefox/firefox /usr/local/bin/firefox
+RUN pip install --no-cache gevent psycopg2 redis
 
-# Cache everything for dev purposes...
-RUN cd /app \
-    && pip install --no-cache -r requirements/docker.txt \
-    && pip install --no-cache -r requirements/requirements-local.txt || true
 USER superset
+
+######################################################################
+# Dev image...
+######################################################################
+# FROM esr AS dev
+# ARG GECKODRIVER_VERSION=v0.28.0
+# ARG FIREFOX_VERSION=88.0
+
+# COPY ./requirements/*.txt ./docker/requirements-*.txt/ /app/requirements/
+
+# USER root
+
+# RUN apt-get update -y \
+#     && apt-get install -y --no-install-recommends libnss3 libdbus-glib-1-2 libgtk-3-0 libx11-xcb1
+
+# # Install GeckoDriver WebDriver
+# RUN wget https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz -O /tmp/geckodriver.tar.gz && \
+#     tar xvfz /tmp/geckodriver.tar.gz -C /tmp && \
+#     mv /tmp/geckodriver /usr/local/bin/geckodriver && \
+#     rm /tmp/geckodriver.tar.gz
+
+# # Install Firefox
+# RUN wget https://download-installer.cdn.mozilla.net/pub/firefox/releases/${FIREFOX_VERSION}/linux-x86_64/en-US/firefox-${FIREFOX_VERSION}.tar.bz2 -O /opt/firefox.tar.bz2 && \
+#     tar xvf /opt/firefox.tar.bz2 -C /opt && \
+#     ln -s /opt/firefox/firefox /usr/local/bin/firefox
+
+# # Cache everything for dev purposes...
+# RUN cd /app \
+#     && pip install --no-cache -r requirements/docker.txt \
+#     && pip install --no-cache -r requirements/requirements-local.txt || true
+# USER superset
 
 
 ######################################################################
