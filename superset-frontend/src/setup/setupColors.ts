@@ -31,6 +31,32 @@ import {
   SequentialScheme,
 } from '@superset-ui/core';
 import superset from '@superset-ui/core/lib/color/colorSchemes/categorical/superset';
+   
+const schemes = [
+  {
+    id: 'switchdinColors',
+    label: 'SwitchDin Colors',
+    colors: [ '#00B299',
+              '#40C5B2',
+              '#80D8CC',
+              '#C0EBE5',
+              '#CDD0D2',
+              '#9BA0A4',
+              '#697177',
+              '#37424A',
+             ],
+  },
+  {
+    id: 'yurikaColors',
+    label: 'Yurika Colors',
+    colors: [ "#5e2590",
+              "#b12d76",
+              "#f03f52",
+              "#f3643d",
+              "#f68224",
+             ],
+  },
+].map(s => new CategoricalScheme(s));
 
 export default function setupColors(
   extraCategoricalColorSchemas: CategoricalScheme[] = [],
@@ -45,7 +71,7 @@ export default function setupColors(
     });
   }
 
-  [superset, airbnb, categoricalD3, echarts, google, lyft, preset].forEach(
+  [schemes, superset, airbnb, categoricalD3, echarts, google, lyft, preset].forEach(
     group => {
       group.forEach(scheme => {
         categoricalSchemeRegistry.registerValue(scheme.id, scheme);
