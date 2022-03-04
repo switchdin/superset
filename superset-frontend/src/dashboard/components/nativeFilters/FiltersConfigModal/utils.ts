@@ -19,6 +19,7 @@
 import { FormInstance } from 'antd/lib/form';
 import shortid from 'shortid';
 import { getInitialDataMask } from 'src/dataMask/reducer';
+import { t } from '@superset-ui/core';
 import { FilterRemoval, NativeFiltersForm } from './types';
 import { Filter, FilterConfiguration, Target } from '../types';
 
@@ -42,6 +43,7 @@ export const validateForm = async (
       errors: [error],
     };
     form.setFields([fieldError]);
+    setCurrentFilterId(filterId);
   };
 
   try {
@@ -56,39 +58,35 @@ export const validateForm = async (
         throw error;
       }
     }
-    const validateInstant = (filterId: string) => {
-      const isInstant = formValues.filters[filterId]
-        ? formValues.filters[filterId].isInstant
-        : filterConfigMap[filterId]?.isInstant;
-      if (!isInstant) {
-        addValidationError(
-          filterId,
-          'isInstant',
-          'For parent filters changes must be applied instantly',
-        );
-      }
-    };
 
-    const validateCycles = (filterId: string, trace: string[] = []) => {
+    const validateCycles = (
+      filterId: string,
+      trace: string[] = [],
+    ): boolean => {
       if (trace.includes(filterId)) {
         addValidationError(
           filterId,
           'parentFilter',
-          'Cannot create cyclic hierarchy',
+          t('Cannot create cyclic hierarchy'),
         );
+        return false;
       }
-      const parentId = formValues.filters[filterId]
-        ? formValues.filters[filterId].parentFilter?.value
+      const parentId = formValues.filters?.[filterId]
+        ? formValues.filters[filterId]?.parentFilter?.value
         : filterConfigMap[filterId]?.cascadeParentIds?.[0];
       if (parentId) {
-        validateInstant(parentId);
-        validateCycles(parentId, [...trace, filterId]);
+        return validateCycles(parentId, [...trace, filterId]);
       }
+      return true;
     };
 
-    filterIds
+    const invalid = filterIds
       .filter(id => !removedFilters[id])
-      .forEach(filterId => validateCycles(filterId));
+      .some(filterId => !validateCycles(filterId));
+
+    if (invalid) {
+      return null;
+    }
 
     return formValues;
   } catch (error) {
@@ -106,7 +104,8 @@ export const validateForm = async (
         field => field.name[0] === 'filters',
       );
       if (filterError) {
-        setCurrentFilterId(filterError.name[1]);
+        const filterId = filterError.name[1];
+        setCurrentFilterId(filterId);
       }
     }
     return null;
@@ -114,30 +113,17 @@ export const validateForm = async (
 };
 
 export const createHandleSave = (
-  form: FormInstance<NativeFiltersForm>,
-  currentFilterId: string,
   filterConfigMap: Record<string, Filter>,
   filterIds: string[],
   removedFilters: Record<string, FilterRemoval>,
-  setCurrentFilterId: Function,
-  resetForm: Function,
   saveForm: Function,
+  values: NativeFiltersForm,
 ) => async () => {
-  const values: NativeFiltersForm | null = await validateForm(
-    form,
-    currentFilterId,
-    filterConfigMap,
-    filterIds,
-    removedFilters,
-    setCurrentFilterId,
-  );
-  if (values === null) return;
-
   const newFilterConfig: FilterConfiguration = filterIds
     .filter(id => !removedFilters[id])
     .map(id => {
       // create a filter config object from the form inputs
-      const formInputs = values.filters[id];
+      const formInputs = values.filters?.[id];
       // if user didn't open a filter, return the original config
       if (!formInputs) return filterConfigMap[id];
       const target: Partial<Target> = {};
@@ -152,6 +138,10 @@ export const createHandleSave = (
         adhoc_filters: formInputs.adhoc_filters,
         time_range: formInputs.time_range,
         controlValues: formInputs.controlValues ?? {},
+        granularity_sqla: formInputs.granularity_sqla,
+        requiredFirst: Object.values(formInputs.requiredFirst ?? {}).find(
+          rf => rf,
+        ),
         name: formInputs.name,
         filterType: formInputs.filterType,
         // for now there will only ever be one target
@@ -161,13 +151,12 @@ export const createHandleSave = (
           ? [formInputs.parentFilter.value]
           : [],
         scope: formInputs.scope,
-        isInstant: formInputs.isInstant,
         sortMetric: formInputs.sortMetric,
+        type: formInputs.type,
       };
     });
 
   await saveForm(newFilterConfig);
-  resetForm();
 };
 
 export const createHandleTabEdit = (

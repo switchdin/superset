@@ -15,17 +15,31 @@
 # specific language governing permissions and limitations
 # under the License.
 import json
+import re
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Dict, Optional, Pattern, Tuple, TYPE_CHECKING
 from urllib import parse
 
+from flask_babel import gettext as __
 from sqlalchemy.engine.url import URL
 
 from superset.db_engine_specs.postgres import PostgresBaseEngineSpec
+from superset.errors import SupersetErrorType
+from superset.models.sql_lab import Query
 from superset.utils import core as utils
 
 if TYPE_CHECKING:
     from superset.models.core import Database
+
+# Regular expressions to catch custom errors
+OBJECT_DOES_NOT_EXIST_REGEX = re.compile(
+    r"Object (?P<object>.*?) does not exist or not authorized."
+)
+
+SYNTAX_ERROR_REGEX = re.compile(
+    "syntax error line (?P<line>.+?) at position (?P<position>.+?) "
+    "unexpected '(?P<syntax_error>.+?)'."
+)
 
 
 class SnowflakeEngineSpec(PostgresBaseEngineSpec):
@@ -44,14 +58,30 @@ class SnowflakeEngineSpec(PostgresBaseEngineSpec):
                  DATE_TRUNC('HOUR', {col}))",
         "PT15M": "DATEADD(MINUTE, FLOOR(DATE_PART(MINUTE, {col}) / 15) * 15, \
                  DATE_TRUNC('HOUR', {col}))",
-        "PT0.5H": "DATEADD(MINUTE, FLOOR(DATE_PART(MINUTE, {col}) / 30) * 30, \
+        "PT30M": "DATEADD(MINUTE, FLOOR(DATE_PART(MINUTE, {col}) / 30) * 30, \
                   DATE_TRUNC('HOUR', {col}))",
         "PT1H": "DATE_TRUNC('HOUR', {col})",
         "P1D": "DATE_TRUNC('DAY', {col})",
         "P1W": "DATE_TRUNC('WEEK', {col})",
         "P1M": "DATE_TRUNC('MONTH', {col})",
-        "P0.25Y": "DATE_TRUNC('QUARTER', {col})",
+        "P3M": "DATE_TRUNC('QUARTER', {col})",
         "P1Y": "DATE_TRUNC('YEAR', {col})",
+    }
+
+    custom_errors: Dict[Pattern[str], Tuple[str, SupersetErrorType, Dict[str, Any]]] = {
+        OBJECT_DOES_NOT_EXIST_REGEX: (
+            __("%(object)s does not exist in this database."),
+            SupersetErrorType.OBJECT_DOES_NOT_EXIST_ERROR,
+            {},
+        ),
+        SYNTAX_ERROR_REGEX: (
+            __(
+                "Please check your query for syntax errors at or "
+                'near "%(syntax_error)s". Then, try running your query again.'
+            ),
+            SupersetErrorType.SYNTAX_ERROR,
+            {},
+        ),
     }
 
     @classmethod
@@ -99,3 +129,34 @@ class SnowflakeEngineSpec(PostgresBaseEngineSpec):
         engine_params["connect_args"] = connect_args
         extra["engine_params"] = engine_params
         database.extra = json.dumps(extra)
+
+    @classmethod
+    def get_cancel_query_id(cls, cursor: Any, query: Query) -> Optional[str]:
+        """
+        Get Snowflake session ID that will be used to cancel all other running
+        queries in the same session.
+
+        :param cursor: Cursor instance in which the query will be executed
+        :param query: Query instance
+        :return: Snowflake Session ID
+        """
+        cursor.execute("SELECT CURRENT_SESSION()")
+        row = cursor.fetchone()
+        return row[0]
+
+    @classmethod
+    def cancel_query(cls, cursor: Any, query: Query, cancel_query_id: str) -> bool:
+        """
+        Cancel query in the underlying database.
+
+        :param cursor: New cursor instance to the db of the query
+        :param query: Query instance
+        :param cancel_query_id: Snowflake Session ID
+        :return: True if query cancelled successfully, False otherwise
+        """
+        try:
+            cursor.execute(f"SELECT SYSTEM$CANCEL_ALL_QUERIES({cancel_query_id})")
+        except Exception:  # pylint: disable=broad-except
+            return False
+
+        return True

@@ -1890,19 +1890,19 @@ msgid "Year"
 msgstr "年"
 
 #: superset/db_engine_specs/base.py:99
-msgid "Week starting sunday"
+msgid "Week starting Sunday"
 msgstr ""
 
 #: superset/db_engine_specs/base.py:100
-msgid "Week starting monday"
+msgid "Week starting Monday"
 msgstr ""
 
 #: superset/db_engine_specs/base.py:101
-msgid "Week ending saturday"
+msgid "Week ending Saturday"
 msgstr ""
 
 #: superset/db_engine_specs/base.py:102
-msgid "Week_ending sunday"
+msgid "Week_ending Sunday"
 msgstr ""
 
 #: superset/db_engine_specs/base.py:1276
@@ -8008,7 +8008,7 @@ msgid ""
 msgstr ""
 
 #: superset-frontend/src/views/CRUD/data/database/DatabaseModal.tsx:570
-msgid "Impersonate Logged In User (Presto & Hive)"
+msgid "Impersonate Logged In User (Presto, Trino, Drill & Hive)"
 msgstr ""
 
 #: superset-frontend/src/views/CRUD/data/database/DatabaseModal.tsx:573

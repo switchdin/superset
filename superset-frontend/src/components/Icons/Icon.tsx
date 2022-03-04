@@ -20,12 +20,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import AntdIcon from '@ant-design/icons';
 import { styled } from '@superset-ui/core';
-import { ReactComponent as TransparentIcon } from 'images/icons/transparent.svg';
+import TransparentIcon from 'src/assets/images/icons/transparent.svg';
 import IconType from './IconType';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const AntdIconComponent = ({ iconColor, iconSize, ...rest }: IconType) => (
-  <AntdIcon viewBox={rest.viewBox || '0 0 24 24'} {...rest} />
+const AntdIconComponent = ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  iconColor,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  iconSize,
+  viewBox,
+  ...rest
+}: Omit<IconType, 'ref' | 'css'>) => (
+  <AntdIcon viewBox={viewBox || '0 0 24 24'} {...rest} />
 );
 
 export const StyledIcon = styled(AntdIconComponent)<IconType>`
@@ -47,15 +53,21 @@ export const Icon = (props: IconProps) => {
   const name = fileName.replace('_', '-');
 
   useEffect(() => {
+    let cancelled = false;
     async function importIcon(): Promise<void> {
       ImportedSVG.current = (
         await import(
-          `!!@svgr/webpack?-svgo,+titleProp,+ref!images/icons/${fileName}.svg`
+          `!!@svgr/webpack?-svgo,+titleProp,+ref!src/assets/images/icons/${fileName}.svg`
         )
       ).default;
-      setLoaded(true);
+      if (!cancelled) {
+        setLoaded(true);
+      }
     }
     importIcon();
+    return () => {
+      cancelled = true;
+    };
   }, [fileName, ImportedSVG]);
 
   return (

@@ -48,6 +48,7 @@ from superset.models.helpers import (
 )
 from superset.models.tags import QueryUpdater
 from superset.sql_parse import CtasMethod, ParsedQuery, Table
+from superset.sqllab.limiting_factor import LimitingFactor
 from superset.utils.core import QueryStatus, user_label
 
 

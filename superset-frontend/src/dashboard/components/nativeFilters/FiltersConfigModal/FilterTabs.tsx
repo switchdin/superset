@@ -20,11 +20,11 @@ import { PlusOutlined } from '@ant-design/icons';
 import { styled, t } from '@superset-ui/core';
 import React, { FC } from 'react';
 import { LineEditableTabs } from 'src/components/Tabs';
-import Icon from 'src/components/Icon';
+import Icons from 'src/components/Icons';
 import { FilterRemoval } from './types';
 import { REMOVAL_DELAY_SECS } from './utils';
 
-export const FILTER_WIDTH = 200;
+export const FILTER_WIDTH = 180;
 
 export const StyledSpan = styled.span`
   cursor: pointer;
@@ -35,25 +35,23 @@ export const StyledSpan = styled.span`
 `;
 
 export const StyledFilterTitle = styled.span`
-  width: ${FILTER_WIDTH}px;
+  width: 100%;
   white-space: normal;
   color: ${({ theme }) => theme.colors.grayscale.dark1};
 `;
 
 export const StyledAddFilterBox = styled.div`
   color: ${({ theme }) => theme.colors.primary.dark1};
-  text-align: left;
-  padding: ${({ theme }) => theme.gridUnit * 2}px 0;
-  margin: ${({ theme }) => theme.gridUnit * 3}px 0 0
-    ${({ theme }) => -theme.gridUnit * 2}px;
-  border-top: 1px solid ${({ theme }) => theme.colors.grayscale.light1};
+  padding: ${({ theme }) => theme.gridUnit * 2}px;
+  border-top: 1px solid ${({ theme }) => theme.colors.grayscale.light2};
+  cursor: pointer;
 
   &:hover {
     color: ${({ theme }) => theme.colors.primary.base};
   }
 `;
 
-export const StyledTrashIcon = styled(Icon)`
+export const StyledTrashIcon = styled(Icons.Trash)`
   color: ${({ theme }) => theme.colors.grayscale.light3};
 `;
 
@@ -63,6 +61,7 @@ export const FilterTabTitle = styled.span`
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  align-items: center;
 
   @keyframes tabTitleRemovalAnimation {
     0%,
@@ -81,34 +80,99 @@ export const FilterTabTitle = styled.span`
     animation-name: tabTitleRemovalAnimation;
     animation-duration: ${REMOVAL_DELAY_SECS}s;
   }
+
+  &.errored > span {
+    color: ${({ theme }) => theme.colors.error.base};
+  }
+`;
+
+const StyledWarning = styled(Icons.Warning)`
+  color: ${({ theme }) => theme.colors.error.base};
+  &.anticon {
+    margin-right: 0;
+  }
 `;
 
 const FilterTabsContainer = styled(LineEditableTabs)`
-  // extra selector specificity:
-  &.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
-    min-width: ${FILTER_WIDTH}px;
-    margin: 0 ${({ theme }) => theme.gridUnit * 2}px 0 0;
-    padding: ${({ theme }) => theme.gridUnit}px
-      ${({ theme }) => theme.gridUnit * 2}px;
+  ${({ theme }) => `
+    height: 100%;
 
-    &:hover,
-    &-active {
-      color: ${({ theme }) => theme.colors.grayscale.dark1};
-      border-radius: ${({ theme }) => theme.borderRadius}px;
-      background-color: ${({ theme }) => theme.colors.secondary.light4};
+    & > .ant-tabs-content-holder {
+      border-left: 1px solid ${theme.colors.grayscale.light2};
+      padding-right: ${theme.gridUnit * 4}px;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
 
-      .ant-tabs-tab-remove > svg {
-        color: ${({ theme }) => theme.colors.grayscale.base};
-        transition: all 0.3s;
+    & > .ant-tabs-content-holder ~ .ant-tabs-content-holder {
+      border: none;
+    }
+
+    &.ant-tabs-card > .ant-tabs-nav .ant-tabs-ink-bar {
+      visibility: hidden;
+    }
+
+    &.ant-tabs-left
+      > .ant-tabs-content-holder
+      > .ant-tabs-content
+      > .ant-tabs-tabpane {
+      padding-left: ${theme.gridUnit * 4}px;
+      margin-top: ${theme.gridUnit * 4}px;
+    }
+
+    .ant-tabs-nav-list {
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding-top: ${theme.gridUnit * 2}px;
+      padding-right: ${theme.gridUnit}px;
+      padding-bottom: ${theme.gridUnit * 3}px;
+      padding-left: ${theme.gridUnit * 3}px;
+      width: 270px;
+    }
+
+    // extra selector specificity:
+    &.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+      min-width: ${FILTER_WIDTH}px;
+      margin: 0 ${theme.gridUnit * 2}px 0 0;
+      padding: ${theme.gridUnit}px
+        ${theme.gridUnit * 2}px;
+      &:hover,
+      &-active {
+        color: ${theme.colors.grayscale.dark1};
+        border-radius: ${theme.borderRadius}px;
+        background-color: ${theme.colors.secondary.light4};
+
+        .ant-tabs-tab-remove > span {
+          color: ${theme.colors.grayscale.base};
+          transition: all 0.3s;
+        }
       }
     }
-  }
 
-  .ant-tabs-tab-btn {
-    text-align: left;
-    justify-content: space-between;
-    text-transform: unset;
-  }
+    .ant-tabs-tab-btn {
+      text-align: left;
+      justify-content: space-between;
+      text-transform: unset;
+    }
+
+    .ant-tabs-nav-more {
+      display: none;
+    }
+
+    .ant-tabs-extra-content {
+      width: 100%;
+    }
+  `}
+`;
+
+const StyledHeader = styled.div`
+  ${({ theme }) => `
+    color: ${theme.colors.grayscale.dark1};
+    font-size: ${theme.typography.sizes.l}px;
+    padding-top: ${theme.gridUnit * 4}px;
+    padding-right: ${theme.gridUnit * 4}px;
+    padding-left: ${theme.gridUnit * 4}px;
+  `}
 `;
 
 type FilterTabsProps = {
@@ -117,6 +181,7 @@ type FilterTabsProps = {
   currentFilterId: string;
   onEdit: (filterId: string, action: 'add' | 'remove') => void;
   filterIds: string[];
+  erroredFilters: string[];
   removedFilters: Record<string, FilterRemoval>;
   restoreFilter: Function;
   children: Function;
@@ -128,52 +193,85 @@ const FilterTabs: FC<FilterTabsProps> = ({
   onChange,
   currentFilterId,
   filterIds = [],
+  erroredFilters = [],
   removedFilters = [],
   restoreFilter,
   children,
 }) => (
   <FilterTabsContainer
+    id="native-filters-tabs"
+    type="editable-card"
     tabPosition="left"
     onChange={onChange}
     activeKey={currentFilterId}
     onEdit={onEdit}
-    addIcon={
-      <StyledAddFilterBox>
-        <PlusOutlined />{' '}
-        <span data-test="add-filter-button">{t('Add filter')}</span>
-      </StyledAddFilterBox>
-    }
+    hideAdd
+    tabBarExtraContent={{
+      left: <StyledHeader>{t('Filters')}</StyledHeader>,
+      right: (
+        <StyledAddFilterBox
+          onClick={() => {
+            onEdit('', 'add');
+            setTimeout(() => {
+              const element = document.getElementById('native-filters-tabs');
+              if (element) {
+                const navList = element.getElementsByClassName(
+                  'ant-tabs-nav-list',
+                )[0];
+                navList.scrollTop = navList.scrollHeight;
+              }
+            }, 0);
+          }}
+        >
+          <PlusOutlined />{' '}
+          <span data-test="add-filter-button" aria-label="Add filter">
+            {t('Add filter')}
+          </span>
+        </StyledAddFilterBox>
+      ),
+    }}
   >
-    {filterIds.map(id => (
-      <LineEditableTabs.TabPane
-        tab={
-          <FilterTabTitle className={removedFilters[id] ? 'removed' : ''}>
-            <StyledFilterTitle>
-              {removedFilters[id] ? t('(Removed)') : getFilterTitle(id)}
-            </StyledFilterTitle>
-            {removedFilters[id] && (
-              <StyledSpan
-                role="button"
-                data-test="undo-button"
-                tabIndex={0}
-                onClick={() => restoreFilter(id)}
-              >
-                {t('Undo?')}
-              </StyledSpan>
-            )}
-          </FilterTabTitle>
-        }
-        key={id}
-        closeIcon={
-          removedFilters[id] ? <></> : <StyledTrashIcon name="trash" />
-        }
-      >
-        {
-          // @ts-ignore
-          children(id)
-        }
-      </LineEditableTabs.TabPane>
-    ))}
+    {filterIds.map(id => {
+      const showErroredFilter = erroredFilters.includes(id);
+      const filterName = getFilterTitle(id);
+      return (
+        <LineEditableTabs.TabPane
+          tab={
+            <FilterTabTitle
+              className={
+                removedFilters[id]
+                  ? 'removed'
+                  : showErroredFilter
+                  ? 'errored'
+                  : ''
+              }
+            >
+              <StyledFilterTitle>
+                {removedFilters[id] ? t('(Removed)') : filterName}
+              </StyledFilterTitle>
+              {!removedFilters[id] && showErroredFilter && <StyledWarning />}
+              {removedFilters[id] && (
+                <StyledSpan
+                  role="button"
+                  data-test="undo-button"
+                  tabIndex={0}
+                  onClick={() => restoreFilter(id)}
+                >
+                  {t('Undo?')}
+                </StyledSpan>
+              )}
+            </FilterTabTitle>
+          }
+          key={id}
+          closeIcon={removedFilters[id] ? <></> : <StyledTrashIcon />}
+        >
+          {
+            // @ts-ignore
+            children(id)
+          }
+        </LineEditableTabs.TabPane>
+      );
+    })}
   </FilterTabsContainer>
 );
 

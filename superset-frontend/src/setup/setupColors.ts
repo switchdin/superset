@@ -31,109 +31,45 @@ import {
   SequentialScheme,
 } from '@superset-ui/core';
 import superset from '@superset-ui/core/lib/color/colorSchemes/categorical/superset';
-   
-const schemes = [
-  {
-    id: 'switchdinColors',
-    label: 'SwitchDin Colors',
-    colors: [ '#00B299','#40C5B2','#80D8CC','#C0EBE5','#CDD0D2','#9BA0A4','#697177','#37424A'],
-  },
-  {
-    id: 'yurikaColors',
-    label: 'Yurika Colors',
-    colors: [ "#5e2590",
-              "#b12d76",
-              "#f03f52",
-              "#F37229",
-              "#a13421",
-             ],
-  },
-  {
-    id: 'jacanaColors',
-    label: 'Jacana Colors',
-    colors: [ "#b8c496",
-              "#D9C796",
-              "#F3643D",
-              "#F68224",
-              "#213E52",
-             ],
-  },
-  {
-    id: 'simplyColors',
-    label: 'Simply Colors',
-    colors: [ "#2CC5F3",
-              "#00A3E2",
-              "#006CB7",
-              "#FDF859",
-              "#62A833",
-             ],
-  },
-  {
-    id: 'ausgridColors',
-    label: 'Ausgrid Colors',
-    colors: [ "#73B818",
-              "#69AC40",
-              "#008BC0",
-              "#006095",
-              "#1D9CA6",
-             ],
-  },
-  {
-    id: 'originColors',
-    label: 'Origin Colors',
-    colors: [ "#FF373C",
-              "#FA4616",
-              "#FF8133",
-              "#FFB92D",
-              "#D44500",
-             ],
-  },
-  {
-    id: 'sapnColors',
-    label: 'SAPN Colors',
-    colors: [ "#284051",
-              "#1F4C71",
-              "#FA7A0A",
-              "#535353",
-              "#1A1614",
-             ],
-  },
-].map(s => new CategoricalScheme(s));
+import ColorSchemeRegistry from '@superset-ui/core/lib/color/ColorSchemeRegistry';
+
+function registerColorSchemes(
+  registry: ColorSchemeRegistry<unknown>,
+  colorSchemes: (CategoricalScheme | SequentialScheme)[],
+  standardDefaultKey: string,
+) {
+  colorSchemes.forEach(scheme => {
+    registry.registerValue(scheme.id, scheme);
+  });
+
+  const defaultKey =
+    colorSchemes.find(scheme => scheme.isDefault)?.id || standardDefaultKey;
+  registry.setDefaultKey(defaultKey);
+}
 
 export default function setupColors(
-  extraCategoricalColorSchemas: CategoricalScheme[] = [],
+  extraCategoricalColorSchemes: CategoricalScheme[] = [],
   extraSequentialColorSchemes: SequentialScheme[] = [],
 ) {
-  // Register color schemes
-  const categoricalSchemeRegistry = getCategoricalSchemeRegistry();
-
-  if (extraCategoricalColorSchemas?.length > 0) {
-    extraCategoricalColorSchemas.forEach(scheme => {
-      categoricalSchemeRegistry.registerValue(scheme.id, scheme);
-    });
-  }
-
-  [schemes, superset, airbnb, categoricalD3, echarts, google, lyft, preset].forEach(
-    group => {
-      group.forEach(scheme => {
-        categoricalSchemeRegistry.registerValue(scheme.id, scheme);
-      });
-    },
+  registerColorSchemes(
+    // @ts-ignore
+    getCategoricalSchemeRegistry(),
+    [
+      ...superset,
+      ...airbnb,
+      ...categoricalD3,
+      ...echarts,
+      ...google,
+      ...lyft,
+      ...preset,
+      ...extraCategoricalColorSchemes,
+    ],
+    'supersetColors',
   );
-  categoricalSchemeRegistry.setDefaultKey('supersetColors');
-
-  const sequentialSchemeRegistry = getSequentialSchemeRegistry();
-
-  if (extraSequentialColorSchemes?.length > 0) {
-    extraSequentialColorSchemes.forEach(scheme => {
-      categoricalSchemeRegistry.registerValue(scheme.id, scheme);
-    });
-  }
-
-  [sequentialCommon, sequentialD3].forEach(group => {
-    group.forEach(scheme => {
-      sequentialSchemeRegistry.registerValue(scheme.id, scheme);
-    });
-  });
-  sequentialSchemeRegistry.setDefaultKey('superset_seq_1');
+  registerColorSchemes(
+    // @ts-ignore
+    getSequentialSchemeRegistry(),
+    [...sequentialCommon, ...sequentialD3, ...extraSequentialColorSchemes],
+    'superset_seq_1',
+  );
 }

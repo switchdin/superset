@@ -17,42 +17,48 @@
  * under the License.
  */
 import {
-  SupersetClient,
   getChartMetadataRegistry,
-  t,
   styled,
+  SupersetClient,
+  t,
 } from '@superset-ui/core';
 import React, { useMemo, useState } from 'react';
 import rison from 'rison';
 import { uniqBy } from 'lodash';
-import { isFeatureEnabled, FeatureFlag } from 'src/featureFlags';
+import moment from 'moment';
+import { FeatureFlag, isFeatureEnabled } from 'src/featureFlags';
 import {
-  createFetchRelated,
   createErrorHandler,
-  handleBulkChartExport,
+  createFetchRelated,
   handleChartDelete,
 } from 'src/views/CRUD/utils';
 import {
-  useListViewResource,
-  useFavoriteStatus,
   useChartEditModal,
+  useFavoriteStatus,
+  useListViewResource,
 } from 'src/views/CRUD/hooks';
+import handleResourceExport from 'src/utils/export';
 import ConfirmStatusChange from 'src/components/ConfirmStatusChange';
 import SubMenu, { SubMenuProps } from 'src/components/Menu/SubMenu';
 import FaveStar from 'src/components/FaveStar';
 import ListView, {
-  ListViewProps,
-  Filters,
-  SelectOption,
+  Filter,
   FilterOperator,
+  Filters,
+  ListViewProps,
+  SelectOption,
 } from 'src/components/ListView';
+import Loading from 'src/components/Loading';
 import { getFromLocalStorage } from 'src/utils/localStorageHelpers';
-import withToasts from 'src/messageToasts/enhancers/withToasts';
+import withToasts from 'src/components/MessageToasts/withToasts';
 import PropertiesModal from 'src/explore/components/PropertiesModal';
 import ImportModelsModal from 'src/components/ImportModal/index';
 import Chart from 'src/types/Chart';
 import { Tooltip } from 'src/components/Tooltip';
 import Icons from 'src/components/Icons';
+import { nativeFilterGate } from 'src/dashboard/components/nativeFilters/utils';
+import setupPlugins from 'src/setup/setupPlugins';
+import CertifiedIcon from 'src/components/CertifiedIcon';
 import ChartCard from './ChartCard';
 
 const PAGE_SIZE = 25;
@@ -69,44 +75,43 @@ const CONFIRM_OVERWRITE_MESSAGE = t(
     'sure you want to overwrite?',
 );
 
+setupPlugins();
 const registry = getChartMetadataRegistry();
 
-const createFetchDatasets = (handleError: (err: Response) => void) => async (
+const createFetchDatasets = async (
   filterValue = '',
-  pageIndex?: number,
-  pageSize?: number,
+  page: number,
+  pageSize: number,
 ) => {
   // add filters if filterValue
   const filters = filterValue
     ? { filters: [{ col: 'table_name', opr: 'sw', value: filterValue }] }
     : {};
-  try {
-    const queryParams = rison.encode({
-      columns: ['datasource_name', 'datasource_id'],
-      keys: ['none'],
-      order_column: 'table_name',
-      order_direction: 'asc',
-      ...(pageIndex ? { page: pageIndex } : {}),
-      ...(pageSize ? { page_size: pageSize } : {}),
-      ...filters,
-    });
+  const queryParams = rison.encode({
+    columns: ['datasource_name', 'datasource_id'],
+    keys: ['none'],
+    order_column: 'table_name',
+    order_direction: 'asc',
+    page,
+    page_size: pageSize,
+    ...filters,
+  });
 
-    const { json = {} } = await SupersetClient.get({
-      endpoint: `/api/v1/dataset/?q=${queryParams}`,
-    });
+  const { json = {} } = await SupersetClient.get({
+    endpoint: `/api/v1/dataset/?q=${queryParams}`,
+  });
 
-    const datasets = json?.result?.map(
-      ({ table_name: tableName, id }: { table_name: string; id: number }) => ({
-        label: tableName,
-        value: id,
-      }),
-    );
+  const datasets = json?.result?.map(
+    ({ table_name: tableName, id }: { table_name: string; id: number }) => ({
+      label: tableName,
+      value: id,
+    }),
+  );
 
-    return uniqBy<SelectOption>(datasets, 'value');
-  } catch (e) {
-    handleError(e);
-  }
-  return [];
+  return {
+    data: uniqBy<SelectOption>(datasets, 'value'),
+    totalCount: json?.count,
+  };
 };
 
 interface ChartListProps {
@@ -114,6 +119,8 @@ interface ChartListProps {
   addSuccessToast: (msg: string) => void;
   user: {
     userId: string | number;
+    firstName: string;
+    lastName: string;
   };
 }
 
@@ -154,6 +161,10 @@ function ChartList(props: ChartListProps) {
 
   const [importingChart, showImportModal] = useState<boolean>(false);
   const [passwordFields, setPasswordFields] = useState<string[]>([]);
+  const [preparingExport, setPreparingExport] = useState<boolean>(false);
+
+  const { userId } = props.user;
+  const userKey = getFromLocalStorage(userId?.toString(), null);
 
   const openChartImportModal = () => {
     showImportModal(true);
@@ -175,6 +186,14 @@ function ChartList(props: ChartListProps) {
     hasPerm('can_read') && isFeatureEnabled(FeatureFlag.VERSIONED_EXPORT);
   const initialSort = [{ id: 'changed_on_delta_humanized', desc: true }];
 
+  const handleBulkChartExport = (chartsToExport: Chart[]) => {
+    const ids = chartsToExport.map(({ id }) => id);
+    handleResourceExport('chart', ids, () => {
+      setPreparingExport(false);
+    });
+    setPreparingExport(true);
+  };
+
   function handleBulkChartDelete(chartsToDelete: Chart[]) {
     SupersetClient.delete({
       endpoint: `/api/v1/chart/?q=${rison.encode(
@@ -195,30 +214,47 @@ function ChartList(props: ChartListProps) {
 
   const columns = useMemo(
     () => [
+      ...(props.user.userId
+        ? [
+            {
+              Cell: ({
+                row: {
+                  original: { id },
+                },
+              }: any) => (
+                <FaveStar
+                  itemId={id}
+                  saveFaveStar={saveFavoriteStatus}
+                  isStarred={favoriteStatus[id]}
+                />
+              ),
+              Header: '',
+              id: 'id',
+              disableSortBy: true,
+              size: 'xs',
+            },
+          ]
+        : []),
       {
         Cell: ({
           row: {
-            original: { id },
-          },
-        }: any) => (
-          <FaveStar
-            itemId={id}
-            saveFaveStar={saveFavoriteStatus}
-            isStarred={favoriteStatus[id]}
-          />
-        ),
-        Header: '',
-        id: 'id',
-        disableSortBy: true,
-        size: 'xs',
-      },
-      {
-        Cell: ({
-          row: {
-            original: { url, slice_name: sliceName },
+            original: {
+              url,
+              slice_name: sliceName,
+              certified_by: certifiedBy,
+              certification_details: certificationDetails,
+            },
           },
         }: any) => (
           <a href={url} data-test={`${sliceName}-list-chart-title`}>
+            {certifiedBy && (
+              <>
+                <CertifiedIcon
+                  certifiedBy={certifiedBy}
+                  details={certificationDetails}
+                />{' '}
+              </>
+            )}
             {sliceName}
           </a>
         ),
@@ -253,23 +289,33 @@ function ChartList(props: ChartListProps) {
         Cell: ({
           row: {
             original: {
-              changed_by_name: changedByName,
+              last_saved_by: lastSavedBy,
               changed_by_url: changedByUrl,
             },
           },
-        }: any) => <a href={changedByUrl}>{changedByName}</a>,
+        }: any) => (
+          <a href={changedByUrl}>
+            {lastSavedBy?.first_name
+              ? `${lastSavedBy?.first_name} ${lastSavedBy?.last_name}`
+              : null}
+          </a>
+        ),
         Header: t('Modified by'),
-        accessor: 'changed_by.first_name',
+        accessor: 'last_saved_by.first_name',
         size: 'xl',
       },
       {
         Cell: ({
           row: {
-            original: { changed_on_delta_humanized: changedOn },
+            original: { last_saved_at: lastSavedAt },
           },
-        }: any) => <span className="no-wrap">{changedOn}</span>,
+        }: any) => (
+          <span className="no-wrap">
+            {lastSavedAt ? moment.utc(lastSavedAt).fromNow() : null}
+          </span>
+        ),
         Header: t('Last modified'),
-        accessor: 'changed_on_delta_humanized',
+        accessor: 'last_saved_at',
         size: 'xl',
       },
       {
@@ -377,95 +423,16 @@ function ChartList(props: ChartListProps) {
         hidden: !canEdit && !canDelete,
       },
     ],
-    [canEdit, canDelete, canExport, favoriteStatus],
+    [
+      canEdit,
+      canDelete,
+      canExport,
+      ...(props.user.userId ? [favoriteStatus] : []),
+    ],
   );
 
-  const filters: Filters = [
-    {
-      Header: t('Owner'),
-      id: 'owners',
-      input: 'select',
-      operator: FilterOperator.relationManyMany,
-      unfilteredLabel: t('All'),
-      fetchSelects: createFetchRelated(
-        'chart',
-        'owners',
-        createErrorHandler(errMsg =>
-          addDangerToast(
-            t(
-              'An error occurred while fetching chart owners values: %s',
-              errMsg,
-            ),
-          ),
-        ),
-        props.user.userId,
-      ),
-      paginate: true,
-    },
-    {
-      Header: t('Created by'),
-      id: 'created_by',
-      input: 'select',
-      operator: FilterOperator.relationOneMany,
-      unfilteredLabel: t('All'),
-      fetchSelects: createFetchRelated(
-        'chart',
-        'created_by',
-        createErrorHandler(errMsg =>
-          addDangerToast(
-            t(
-              'An error occurred while fetching chart created by values: %s',
-              errMsg,
-            ),
-          ),
-        ),
-        props.user.userId,
-      ),
-      paginate: true,
-    },
-    {
-      Header: t('Viz type'),
-      id: 'viz_type',
-      input: 'select',
-      operator: FilterOperator.equals,
-      unfilteredLabel: t('All'),
-      selects: registry
-        .keys()
-        .map(k => ({ label: registry.get(k)?.name || k, value: k }))
-        .sort((a, b) => {
-          if (!a.label || !b.label) {
-            return 0;
-          }
-
-          if (a.label > b.label) {
-            return 1;
-          }
-          if (a.label < b.label) {
-            return -1;
-          }
-
-          return 0;
-        }),
-    },
-    {
-      Header: t('Dataset'),
-      id: 'datasource_id',
-      input: 'select',
-      operator: FilterOperator.equals,
-      unfilteredLabel: t('All'),
-      fetchSelects: createFetchDatasets(
-        createErrorHandler(errMsg =>
-          addDangerToast(
-            t(
-              'An error occurred while fetching chart dataset values: %s',
-              errMsg,
-            ),
-          ),
-        ),
-      ),
-      paginate: false,
-    },
-    {
+  const favoritesFilter: Filter = useMemo(
+    () => ({
       Header: t('Favorite'),
       id: 'id',
       urlDisplay: 'favorite',
@@ -476,14 +443,110 @@ function ChartList(props: ChartListProps) {
         { label: t('Yes'), value: true },
         { label: t('No'), value: false },
       ],
-    },
-    {
-      Header: t('Search'),
-      id: 'slice_name',
-      input: 'search',
-      operator: FilterOperator.chartAllText,
-    },
-  ];
+    }),
+    [],
+  );
+
+  const filters: Filters = useMemo(
+    () => [
+      {
+        Header: t('Owner'),
+        id: 'owners',
+        input: 'select',
+        operator: FilterOperator.relationManyMany,
+        unfilteredLabel: t('All'),
+        fetchSelects: createFetchRelated(
+          'chart',
+          'owners',
+          createErrorHandler(errMsg =>
+            addDangerToast(
+              t(
+                'An error occurred while fetching chart owners values: %s',
+                errMsg,
+              ),
+            ),
+          ),
+          props.user,
+        ),
+        paginate: true,
+      },
+      {
+        Header: t('Created by'),
+        id: 'created_by',
+        input: 'select',
+        operator: FilterOperator.relationOneMany,
+        unfilteredLabel: t('All'),
+        fetchSelects: createFetchRelated(
+          'chart',
+          'created_by',
+          createErrorHandler(errMsg =>
+            addDangerToast(
+              t(
+                'An error occurred while fetching chart created by values: %s',
+                errMsg,
+              ),
+            ),
+          ),
+          props.user,
+        ),
+        paginate: true,
+      },
+      {
+        Header: t('Viz type'),
+        id: 'viz_type',
+        input: 'select',
+        operator: FilterOperator.equals,
+        unfilteredLabel: t('All'),
+        selects: registry
+          .keys()
+          .filter(k => nativeFilterGate(registry.get(k)?.behaviors || []))
+          .map(k => ({ label: registry.get(k)?.name || k, value: k }))
+          .sort((a, b) => {
+            if (!a.label || !b.label) {
+              return 0;
+            }
+
+            if (a.label > b.label) {
+              return 1;
+            }
+            if (a.label < b.label) {
+              return -1;
+            }
+
+            return 0;
+          }),
+      },
+      {
+        Header: t('Dataset'),
+        id: 'datasource_id',
+        input: 'select',
+        operator: FilterOperator.equals,
+        unfilteredLabel: t('All'),
+        fetchSelects: createFetchDatasets,
+        paginate: true,
+      },
+      ...(props.user.userId ? [favoritesFilter] : []),
+      {
+        Header: t('Certified'),
+        id: 'id',
+        urlDisplay: 'certified',
+        input: 'select',
+        operator: FilterOperator.chartIsCertified,
+        unfilteredLabel: t('Any'),
+        selects: [
+          { label: t('Yes'), value: true },
+          { label: t('No'), value: false },
+        ],
+      },
+      {
+        Header: t('Search'),
+        id: 'slice_name',
+        input: 'search',
+        operator: FilterOperator.chartAllText,
+      },
+    ],
+    [addDangerToast, favoritesFilter, props.user],
+  );
 
   const sortTypes = [
     {
@@ -507,8 +570,6 @@ function ChartList(props: ChartListProps) {
   ];
 
   function renderCard(chart: Chart) {
-    const { userId } = props.user;
-    const userKey = getFromLocalStorage(userId.toString(), null);
     return (
       <ChartCard
         chart={chart}
@@ -526,6 +587,7 @@ function ChartList(props: ChartListProps) {
         loading={loading}
         favoriteStatus={favoriteStatus[chart.id]}
         saveFavoriteStatus={saveFavoriteStatus}
+        handleBulkChartExport={handleBulkChartExport}
       />
     );
   }
@@ -550,21 +612,22 @@ function ChartList(props: ChartListProps) {
         window.location.assign('/chart/add');
       },
     });
-  }
-  if (isFeatureEnabled(FeatureFlag.VERSIONED_EXPORT)) {
-    subMenuButtons.push({
-      name: (
-        <Tooltip
-          id="import-tooltip"
-          title={t('Import charts')}
-          placement="bottomRight"
-        >
-          <Icons.Import data-test="import-button" />
-        </Tooltip>
-      ),
-      buttonStyle: 'link',
-      onClick: openChartImportModal,
-    });
+
+    if (isFeatureEnabled(FeatureFlag.VERSIONED_EXPORT)) {
+      subMenuButtons.push({
+        name: (
+          <Tooltip
+            id="import-tooltip"
+            title={t('Import charts')}
+            placement="bottomRight"
+          >
+            <Icons.Import data-test="import-button" />
+          </Tooltip>
+        ),
+        buttonStyle: 'link',
+        onClick: openChartImportModal,
+      });
+    }
   }
   return (
     <>
@@ -616,6 +679,11 @@ function ChartList(props: ChartListProps) {
               loading={loading}
               pageSize={PAGE_SIZE}
               renderCard={renderCard}
+              showThumbnails={
+                userKey
+                  ? userKey.thumbnails
+                  : isFeatureEnabled(FeatureFlag.THUMBNAILS)
+              }
               defaultViewMode={
                 isFeatureEnabled(FeatureFlag.LISTVIEWS_DEFAULT_CARD_VIEW)
                   ? 'card'
@@ -639,6 +707,7 @@ function ChartList(props: ChartListProps) {
         passwordFields={passwordFields}
         setPasswordFields={setPasswordFields}
       />
+      {preparingExport && <Loading />}
     </>
   );
 }
