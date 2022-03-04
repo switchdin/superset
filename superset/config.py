@@ -216,7 +216,7 @@ PROXY_FIX_CONFIG = {"x_for": 1, "x_proto": 1, "x_host": 1, "x_port": 1, "x_prefi
 # GLOBALS FOR APP Builder
 # ------------------------------
 # Uncomment to setup Your App name
-APP_NAME = "IQ"
+APP_NAME = "Stormcloud IQ"
 
 # Uncomment to setup an App icon
 APP_ICON = "/static/assets/images/switchdin-logo-horiz.png"
@@ -1299,7 +1299,7 @@ if CONFIG_PATH_ENV_VAR in os.environ:
 elif importlib.util.find_spec("superset_config") and not is_test():
     try:
         import superset_config  # pylint: disable=import-error
-        from superset_config import *  # type: ignore # pylint: disable=import-error,wildcard-import
+        from superset_config import *
 
         print(f"Loaded your LOCAL configuration at [{superset_config.__file__}]")
     except Exception:

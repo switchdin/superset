@@ -32,6 +32,13 @@ import {
 } from '@superset-ui/core';
 import superset from '@superset-ui/core/lib/color/colorSchemes/categorical/superset';
 import ColorSchemeRegistry from '@superset-ui/core/lib/color/ColorSchemeRegistry';
+import switchdin from './customColors/switchdin';
+import yurika from './customColors/yurika';
+import jacana from './customColors/jacana';
+import simplyenergy from './customColors/simplyenergy';
+import ausgrid from './customColors/ausgrid';
+import origin from './customColors/origin';
+import sapn from './customColors/sapn';
 
 function registerColorSchemes(
   registry: ColorSchemeRegistry<unknown>,
@@ -56,6 +63,13 @@ export default function setupColors(
     getCategoricalSchemeRegistry(),
     [
       ...superset,
+      ...switchdin,
+      ...yurika,
+      ...jacana,
+      ...simplyenergy,
+      ...ausgrid,
+      ...origin,
+      ...sapn,
       ...airbnb,
       ...categoricalD3,
       ...echarts,
