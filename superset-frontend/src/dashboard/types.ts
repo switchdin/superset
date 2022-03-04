@@ -78,8 +78,6 @@ export type DashboardInfo = {
   };
 };
 
-export type ChartsState = { [key: string]: Chart };
-
 export type Datasource = DatasourceMeta & {
   uid: string;
   column_types: GenericDataType[];
