@@ -42,8 +42,8 @@ import simplyenergy from './customColors/simplyenergy';
 import ausgrid from './customColors/ausgrid';
 import origin from './customColors/origin';
 import sapn from './customColors/sapn';
-import acciona from './customColors/acciona';
-import symphony from './customColors/symphony';
+//import acciona from './customColors/acciona';
+//import symphony from './customColors/symphony';
 
 function registerColorSchemes<T extends ColorScheme>(
   registry: ColorSchemeRegistry<T>,
@@ -75,13 +75,13 @@ export default function setupColors(
     [
       ...switchdin,
       ...yurika,
-      ...symphony,
+      //...symphony,
       ...jacana,
       ...simplyenergy,
       ...ausgrid,
       ...origin,
       ...sapn,
-      ...acciona,
+      //...acciona,
       ...CategoricalAirbnb,
       ...CategoricalD3,
       ...CategoricalEcharts,
