@@ -42,7 +42,7 @@ import Select, { propertyComparator } from 'src/components/Select/Select';
 import { FeatureFlag, isFeatureEnabled } from 'src/featureFlags';
 import withToasts from 'src/components/MessageToasts/withToasts';
 import Owner from 'src/types/Owner';
-import { Checkbox } from 'src/common/components';
+import { AntdCheckbox } from 'src/components';
 import TextAreaControl from 'src/explore/components/controls/TextAreaControl';
 import { useCommonConf } from 'src/views/CRUD/data/database/state';
 import {
@@ -73,6 +73,7 @@ type SelectValue = {
 };
 
 interface AlertReportModalProps {
+  addSuccessToast: (msg: string) => void;
   addDangerToast: (msg: string) => void;
   alert?: AlertObject | null;
   isReport?: boolean;
@@ -87,37 +88,30 @@ const CONDITIONS = [
   {
     label: t('< (Smaller than)'),
     value: '<',
-    order: 0,
   },
   {
     label: t('> (Larger than)'),
     value: '>',
-    order: 1,
   },
   {
     label: t('<= (Smaller or equal)'),
     value: '<=',
-    order: 2,
   },
   {
     label: t('>= (Larger or equal)'),
     value: '>=',
-    order: 3,
   },
   {
     label: t('== (Is equal)'),
     value: '==',
-    order: 4,
   },
   {
     label: t('!= (Is not equal)'),
     value: '!=',
-    order: 5,
   },
   {
     label: t('Not null'),
     value: 'not null',
-    order: 6,
   },
 ];
 
@@ -342,7 +336,7 @@ const StyledRadioGroup = styled(Radio.Group)`
   margin-left: ${({ theme }) => theme.gridUnit * 5.5}px;
 `;
 
-const StyledCheckbox = styled(Checkbox)`
+const StyledCheckbox = styled(AntdCheckbox)`
   margin-left: ${({ theme }) => theme.gridUnit * 5.5}px;
 `;
 
@@ -409,6 +403,7 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
   show,
   alert = null,
   isReport = false,
+  addSuccessToast,
 }) => {
   const conf = useCommonConf();
   const allowedNotificationMethods: NotificationMethodOption[] =
@@ -562,6 +557,8 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
             return;
           }
 
+          addSuccessToast(t(`${data.type} updated`));
+
           if (onAdd) {
             onAdd();
           }
@@ -575,6 +572,8 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
         if (!response) {
           return;
         }
+
+        addSuccessToast(t(`${data.type} updated`));
 
         if (onAdd) {
           onAdd(response);
@@ -940,7 +939,6 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
       (!currentAlert || currentAlert.id || (isHidden && show))
     ) {
       setCurrentAlert({ ...DEFAULT_ALERT });
-      setForceScreenshot(contentType === 'chart' && !isReport);
       setNotificationSettings([]);
       setNotificationAddState('active');
     }
@@ -1195,7 +1193,6 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                         currentAlert?.validator_config_json?.op || undefined
                       }
                       options={CONDITIONS}
-                      sortComparator={propertyComparator('order')}
                     />
                   </div>
                 </StyledInputContainer>
@@ -1369,18 +1366,19 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                     )}
                   </StyledRadioGroup>
                 </div>
-                {isReport && (
-                  <div className="inline-container">
-                    <StyledCheckbox
-                      className="checkbox"
-                      checked={forceScreenshot}
-                      onChange={onForceScreenshotChange}
-                    >
-                      Ignore cache when generating screenshot
-                    </StyledCheckbox>
-                  </div>
-                )}
               </>
+            )}
+            {(isReport || contentType === 'dashboard') && (
+              <div className="inline-container">
+                <StyledCheckbox
+                  data-test="bypass-cache"
+                  className="checkbox"
+                  checked={forceScreenshot}
+                  onChange={onForceScreenshotChange}
+                >
+                  Ignore cache when generating screenshot
+                </StyledCheckbox>
+              </div>
             )}
             <StyledSectionTitle>
               <h4>{t('Notification method')}</h4>
