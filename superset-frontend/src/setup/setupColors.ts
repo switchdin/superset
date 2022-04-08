@@ -35,6 +35,14 @@ import {
   SequentialD3,
   ColorSchemeRegistry,
 } from '@superset-ui/core';
+import switchdin from './customColors/switchdin';
+import yurika from './customColors/yurika';
+import jacana from './customColors/jacana';
+import simplyenergy from './customColors/simplyenergy';
+import ausgrid from './customColors/ausgrid';
+import origin from './customColors/origin';
+import sapn from './customColors/sapn';
+import acciona from './customColors/acciona'
 
 function registerColorSchemes<T extends ColorScheme>(
   registry: ColorSchemeRegistry<T>,
@@ -64,6 +72,14 @@ export default function setupColors(
     // @ts-ignore
     getCategoricalSchemeRegistry(),
     [
+      ...switchdin,
+      ...yurika,
+      ...jacana,
+      ...simplyenergy,
+      ...ausgrid,
+      ...origin,
+      ...sapn,
+      ...acciona,
       ...CategoricalAirbnb,
       ...CategoricalD3,
       ...CategoricalEcharts,
@@ -71,6 +87,7 @@ export default function setupColors(
       ...CategoricalLyft,
       ...CategoricalPreset,
       ...CategoricalSuperset,
+      ...extraCategoricalColorSchemes,
       ...extraCategoricalColorSchemes,
     ],
     'supersetColors',
