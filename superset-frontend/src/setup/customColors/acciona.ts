@@ -4,7 +4,14 @@ const schemes = [
   {
     id: 'acciona',
     label: 'Acciona Colours',
-    colors: ['#FF6464', '#FF0000', '#9B0000', '#7F7E7E', '#464646', '#000000'],
+    colors: [
+      '#FF6464',
+      '#FF0000',
+      '#9B0000',
+      '#7F7E7E',
+      '#464646',
+      '#000000',
+    ],
   },
 ].map(s => new CategoricalScheme(s));
 
