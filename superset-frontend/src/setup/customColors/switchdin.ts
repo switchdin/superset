@@ -3,7 +3,7 @@ import { CategoricalScheme } from '@superset-ui/core';
 const schemes = [
   {
     id: 'switchdin',
-    label: 'SwitchDin Colors',
+    label: 'SwitchDin Colours',
     colors: [
       '#00B299',
       '#40C5B2',
