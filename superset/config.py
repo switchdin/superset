@@ -232,11 +232,11 @@ PROXY_FIX_CONFIG = {"x_for": 1, "x_proto": 1, "x_host": 1, "x_port": 1, "x_prefi
 # GLOBALS FOR APP Builder
 # ------------------------------
 # Uncomment to setup Your App name
-APP_NAME = "Superset"
+APP_NAME = "Stormcloud IQ"
 
 # Specify the App icon
-APP_ICON = "/static/assets/images/superset-logo-horiz.png"
-APP_ICON_WIDTH = 126
+APP_ICON = "/static/assets/images/switchdin-logo-horiz.png"
+APP_ICON_WIDTH = 146
 
 # Specify where clicking the logo would take the user
 # e.g. setting it to '/' would take the user to '/superset/welcome/'
@@ -355,10 +355,10 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     # SUPERSET_WEBSERVER_DOMAINS for list of domains
     "ALLOW_DASHBOARD_DOMAIN_SHARDING": True,
     # Experimental feature introducing a client (browser) cache
-    "CLIENT_CACHE": False,
+    "CLIENT_CACHE": True,
     "DISABLE_DATASET_SOURCE_EDIT": False,
     # When using a recent version of Druid that supports JOINs turn this on
-    "DRUID_JOINS": False,
+    "DRUID_JOINS": True,
     "DYNAMIC_PLUGINS": False,
     # With Superset 2.0, we are updating the default so that the legacy datasource
     # editor no longer shows. Currently this is set to false so that the editor
@@ -413,13 +413,13 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     "ROW_LEVEL_SECURITY": True,
     "EMBEDDED_SUPERSET": False,
     # Enables Alerts and reports new implementation
-    "ALERT_REPORTS": False,
+    "ALERT_REPORTS": True,
     # Enable experimental feature to search for other dashboards
     "OMNIBAR": False,
     "DASHBOARD_RBAC": False,
-    "ENABLE_EXPLORE_DRAG_AND_DROP": False,
-    "ENABLE_FILTER_BOX_MIGRATION": False,
-    "ENABLE_DND_WITH_CLICK_UX": False,
+    "ENABLE_EXPLORE_DRAG_AND_DROP": True,
+    "ENABLE_FILTER_BOX_MIGRATION": True,
+    "ENABLE_DND_WITH_CLICK_UX": True,
     # Enabling ALERTS_ATTACH_REPORTS, the system sends email and slack message
     # with screenshot and link
     # Disables ALERTS_ATTACH_REPORTS, the system DOES NOT generate screenshot
@@ -434,9 +434,9 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     "ENFORCE_DB_ENCRYPTION_UI": False,
     # Allow users to export full CSV of table viz type.
     # This could cause the server to run out of memory or compute.
-    "ALLOW_FULL_CSV_EXPORT": False,
-    "UX_BETA": False,
-    "GENERIC_CHART_AXES": False,
+    "ALLOW_FULL_CSV_EXPORT": True,
+    "UX_BETA": True,
+    "GENERIC_CHART_AXES": True,
     "ALLOW_ADHOC_SUBQUERY": False,
 }
 
@@ -491,38 +491,98 @@ COMMON_BOOTSTRAP_OVERRIDES_FUNC: Callable[
 
 # EXTRA_CATEGORICAL_COLOR_SCHEMES is used for adding custom categorical color schemes
 # example code for "My custom warm to hot" color scheme
-# EXTRA_CATEGORICAL_COLOR_SCHEMES = [
-#     {
-#         "id": 'myVisualizationColors',
-#         "description": '',
-#         "label": 'My Visualization Colors',
-#         "isDefault": True,
-#         "colors":
-#          ['#006699', '#009DD9', '#5AAA46', '#44AAAA', '#DDAA77', '#7799BB', '#88AA77',
-#          '#552288', '#5AAA46', '#CC7788', '#EEDD55', '#9977BB', '#BBAA44', '#DDCCDD']
-#     }]
-
+EXTRA_CATEGORICAL_COLOR_SCHEMES = [
+     {
+         "id": 'switchdinColours',
+         "description": '',
+         "label": 'SwitchDin',
+         "isDefault": True,
+         "colors":
+          ['#00B299', '#40C5B2', '#80D8CC', '#C0EBE5', '#CDD0D2', '#9BA0A4', '#697177',
+          '#37424A']
+     },
+     {
+         "id": 'acciona',
+         "description": '',
+         "label": 'Acciona',
+         "isDefault": False,
+         "colors":
+          ['#FF6464', '#FF0000', '#9B0000', '#7F7E7E', '#464646', '#000000']
+     },
+     {
+         "id": 'ausgrid',
+         "description": '',
+         "label": 'AusGrid',
+         "isDefault": False,
+         "colors":
+          ['#73B818', '#69AC40', '#008BC0', '#006095', '#1D9CA6']
+     },
+     {
+         "id": 'jacana',
+         "description": '',
+         "label": 'Jacana',
+         "isDefault": False,
+         "colors":
+          ['#b8c496', '#D9C796', '#F3643D', '#F68224', '#213E52']
+     },
+     {
+         "id": 'origin',
+         "description": '',
+         "label": 'Origin',
+         "isDefault": False,
+         "colors":
+          ['#FF373C', '#FA4616', '#FF8133', '#FFB92D', '#D44500']
+     },
+     {
+         "id": 'sapn',
+         "description": '',
+         "label": 'SAPN',
+         "isDefault": False,
+         "colors":
+          ['#284051', '#1F4C71', '#FA7A0A', '#535353', '#1A1614']
+     },
+     {
+         "id": 'simplyenergy',
+         "description": '',
+         "label": 'Simply Energy',
+         "isDefault": False,
+         "colors":
+          ['#2CC5F3', '#00A3E2', '#006CB7', '#FDF859', '#62A833']
+     },
+     {
+         "id": 'yurika',
+         "description": '',
+         "label": 'Yurika',
+         "isDefault": False,
+         "colors":
+          ['#5e2590', '#b12d76', '#f03f52', '#F37229', '#a13421']
+     }]
 # This is merely a default
-EXTRA_CATEGORICAL_COLOR_SCHEMES: List[Dict[str, Any]] = []
+# EXTRA_CATEGORICAL_COLOR_SCHEMES: List[Dict[str, Any]] = []
 
 # THEME_OVERRIDES is used for adding custom theme to superset
 # example code for "My theme" custom scheme
-# THEME_OVERRIDES = {
-#   "borderRadius": 4,
-#   "colors": {
-#     "primary": {
-#       "base": 'red',
-#     },
-#     "secondary": {
-#       "base": 'green',
-#     },
-#     "grayscale": {
-#       "base": 'orange',
-#     }
-#   }
-# }
-
-THEME_OVERRIDES: Dict[str, Any] = {}
+#TODO: Switchdin Colours
+THEME_OVERRIDES = {
+   "colors": {
+     "primary": {
+       "base": '#80D8CC', #Done
+       "dark1": '#00B299', #Done
+       "dark2": '#156378',
+       "light1": '#79CADE',
+       "light2": '#A5DAE9',
+       "light3": '#D2EDF4',
+       "light4": '#E9F6F9',
+       "light5": '#F3F8FA',
+     },
+     "secondary": {
+       "base": '#40C5B2',
+     }
+     
+   }
+ }
+# ['#00B299', '#40C5B2', '#80D8CC', '#C0EBE5', '#CDD0D2', '#9BA0A4', '#697177', '#37424A']
+# THEME_OVERRIDES: Dict[str, Any] = {}
 
 # EXTRA_SEQUENTIAL_COLOR_SCHEMES is used for adding custom sequential color schemes
 # EXTRA_SEQUENTIAL_COLOR_SCHEMES =  [
@@ -636,7 +696,7 @@ CSV_EXPORT = {"encoding": "utf-8"}
 # time grains in superset/db_engine_specs.builtin_time_grains).
 # For example: to disable 1 second time grain:
 # TIME_GRAIN_DENYLIST = ['PT1S']
-TIME_GRAIN_DENYLIST: List[str] = []
+TIME_GRAIN_DENYLIST: List[str] = ['PT1S']
 
 # Additional time grains to be supported using similar definitions as in
 # superset/db_engine_specs.builtin_time_grains.
@@ -851,7 +911,7 @@ QUERY_COST_FORMATTERS_BY_ENGINE: Dict[
 ] = {}
 
 # Flag that controls if limit should be enforced on the CTA (create table as queries).
-SQLLAB_CTAS_NO_LIMIT = False
+SQLLAB_CTAS_NO_LIMIT = True
 
 # This allows you to define custom logic around the "CREATE TABLE AS" or CTAS feature
 # in SQL Lab that defines where the target schema should be for a given user.
@@ -1095,7 +1155,7 @@ ALERT_REPORTS_WORKING_SOFT_TIME_OUT_LAG = int(timedelta(seconds=1).total_seconds
 ALERT_REPORTS_NOTIFICATION_DRY_RUN = False
 
 # A custom prefix to use on all Alerts & Reports emails
-EMAIL_REPORTS_SUBJECT_PREFIX = "[Report] "
+EMAIL_REPORTS_SUBJECT_PREFIX = "[Stormcloud IQ] "
 
 # Slack API token for the superset reports, either string or callable
 SLACK_API_TOKEN: Optional[Union[Callable[[], str], str]] = None
