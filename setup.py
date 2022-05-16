@@ -95,7 +95,7 @@ setup(
         "isodate",
         "markdown>=3.0",
         "msgpack>=1.0.0, <1.1",
-        "pandas=1.3.0",
+        "pandas>=1.3.0, <1.3.1",
         "parsedatetime",
         "pgsanity",
         "polyline",
