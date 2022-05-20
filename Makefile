@@ -16,7 +16,7 @@
 #
 
 # Python version installed; we need 3.7-3.9
-PYTHON=`command -v python3.9 || command -v python3.8 || command -v python3.7`
+PYTHON=`command -v python3.9 || command -v python3.9 || command -v python3.7`
 
 .PHONY: install superset venv pre-commit
 
