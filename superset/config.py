@@ -485,19 +485,75 @@ COMMON_BOOTSTRAP_OVERRIDES_FUNC: Callable[
 
 # EXTRA_CATEGORICAL_COLOR_SCHEMES is used for adding custom categorical color schemes
 # example code for "My custom warm to hot" color scheme
-# EXTRA_CATEGORICAL_COLOR_SCHEMES = [
-#     {
-#         "id": 'myVisualizationColors',
-#         "description": '',
-#         "label": 'My Visualization Colors',
-#         "isDefault": True,
-#         "colors":
-#          ['#006699', '#009DD9', '#5AAA46', '#44AAAA', '#DDAA77', '#7799BB', '#88AA77',
-#          '#552288', '#5AAA46', '#CC7788', '#EEDD55', '#9977BB', '#BBAA44', '#DDCCDD']
-#     }]
+EXTRA_CATEGORICAL_COLOR_SCHEMES = [
+     {
+         "id": 'switchdinColours',
+         "description": '',
+         "label": 'SwitchDin',
+         "isDefault": True,
+         "colors":
+          ['#00B299', '#40C5B2', '#80D8CC', '#C0EBE5', '#CDD0D2', '#9BA0A4', '#697177',
+          '#37424A']
+     },
+     # {
+     #     "id": 'acciona',
+     #     "description": '',
+     #     "label": 'Acciona',
+     #     "isDefault": False,
+     #     "colors":
+     #      ['#FF6464', '#FF0000', '#9B0000', '#7F7E7E', '#464646', '#000000']
+     # },
+     {
+         "id": 'ausgrid',
+         "description": '',
+         "label": 'AusGrid',
+         "isDefault": False,
+         "colors":
+          ['#73B818', '#69AC40', '#008BC0', '#006095', '#1D9CA6']
+     },
+     {
+         "id": 'jacana',
+         "description": '',
+         "label": 'Jacana',
+         "isDefault": False,
+         "colors":
+          ['#b8c496', '#D9C796', '#F3643D', '#F68224', '#213E52']
+     },
+     {
+         "id": 'origin',
+         "description": '',
+         "label": 'Origin',
+         "isDefault": False,
+         "colors":
+          ['#FF373C', '#FA4616', '#FF8133', '#FFB92D', '#D44500']
+     },
+     {
+         "id": 'sapn',
+         "description": '',
+         "label": 'SAPN',
+         "isDefault": False,
+         "colors":
+          ['#284051', '#1F4C71', '#FA7A0A', '#535353', '#1A1614']
+     },
+     {
+         "id": 'simplyenergy',
+         "description": '',
+         "label": 'Simply Energy',
+         "isDefault": False,
+         "colors":
+          ['#2CC5F3', '#00A3E2', '#006CB7', '#FDF859', '#62A833']
+     },
+     {
+         "id": 'yurika',
+         "description": '',
+         "label": 'Yurika',
+         "isDefault": False,
+         "colors":
+          ['#5e2590', '#b12d76', '#f03f52', '#F37229', '#a13421']
+     }]
 
 # This is merely a default
-EXTRA_CATEGORICAL_COLOR_SCHEMES: List[Dict[str, Any]] = []
+# EXTRA_CATEGORICAL_COLOR_SCHEMES: List[Dict[str, Any]] = []
 
 # THEME_OVERRIDES is used for adding custom theme to superset
 # example code for "My theme" custom scheme
