@@ -557,7 +557,7 @@ EXTRA_CATEGORICAL_COLOR_SCHEMES = [
         "label": 'Synergy',
         "isDefault": False,
         "colors":
-        ['#009B77', '#00968F', '#00A9E0', '#41B6E6']
+        ['#009B77', '#00968F', '#00A9E0', '#41B6E6', '#E5E6E5']
      }
     ]
 
