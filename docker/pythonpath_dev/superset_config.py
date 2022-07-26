@@ -99,6 +99,27 @@ WEBDRIVER_BASEURL_USER_FRIENDLY = WEBDRIVER_BASEURL
 
 SQLLAB_CTAS_NO_LIMIT = True
 
+THUMBNAIL_SELENIUM_USER = "admin"
+THUMBNAIL_CACHE_CONFIG: CacheConfig = {
+    'CACHE_TYPE': 'redis',
+    'CACHE_DEFAULT_TIMEOUT': 24*60*60,
+    'CACHE_KEY_PREFIX': 'thumbnail_',
+    'CACHE_NO_NULL_WARNING': True,
+    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
+}
+WEBDRIVER_TYPE= "chrome"
+# for older versions this was  EMAIL_REPORTS_WEBDRIVER = "chrome"
+WEBDRIVER_OPTION_ARGS = [
+        "--force-device-scale-factor=2.0",
+        "--high-dpi-support=2.0",
+        "--headless",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-extensions",
+        ]
+
 #
 # Optionally import superset_config_docker.py (which will have been included on
 # the PYTHONPATH) in order to allow for local settings to be overridden
