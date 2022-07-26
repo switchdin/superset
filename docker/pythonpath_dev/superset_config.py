@@ -28,6 +28,20 @@ from typing import Optional
 from cachelib.file import FileSystemCache
 from celery.schedules import crontab
 
+from superset.superset_typing import CacheConfig
+from superset.constants import CHANGE_ME_SECRET_KEY
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Type,
+    TYPE_CHECKING,
+    Union,
+)
+
 logger = logging.getLogger()
 
 
@@ -43,6 +57,40 @@ def get_env_variable(var_name: str, default: Optional[str] = None) -> str:
                 var_name
             )
             raise EnvironmentError(error_msg)
+
+# TODO: Change the following in deployment config:
+SECRET_KEY = CHANGE_ME_SECRET_KEY
+
+SMTP_HOST = "localhost"
+SMTP_STARTTLS = True
+SMTP_SSL = False
+SMTP_USER = "superset"
+SMTP_PORT = 25
+SMTP_PASSWORD = "superset"
+SMTP_MAIL_FROM = "superset@superset.com"
+
+MAPBOX_API_KEY = os.environ.get("MAPBOX_API_KEY", "")
+
+SLACK_API_TOKEN: Optional[Union[Callable[[], str], str]] = None
+SLACK_PROXY = None
+
+# This is an important setting, and should be lower than your
+# [load balancer / proxy / envoy / kong / ...] timeout settings.
+# You should also make sure to configure your WSGI server
+# (gunicorn, nginx, apache, ...) timeout setting to be <= to this setting
+SUPERSET_WEBSERVER_TIMEOUT = int(timedelta(minutes=1).total_seconds())
+
+WEBDRIVER_BASEURL = "http://0.0.0.0:8080/"
+# The base URL for the email report hyperlinks.
+WEBDRIVER_BASEURL_USER_FRIENDLY = WEBDRIVER_BASEURL
+
+# BJC - Possibly Look at in the future
+# Send user to a link where they can read more about Superset
+DOCUMENTATION_URL = None
+DOCUMENTATION_TEXT = "Documentation"
+DOCUMENTATION_ICON = None  # Recommended size: 16x16
+
+
 
 
 DATABASE_DIALECT = get_env_variable("DATABASE_DIALECT")
@@ -99,13 +147,14 @@ WEBDRIVER_BASEURL_USER_FRIENDLY = WEBDRIVER_BASEURL
 
 SQLLAB_CTAS_NO_LIMIT = True
 
-THUMBNAIL_SELENIUM_USER = "admin"
+
+# Cache Configs
 THUMBNAIL_CACHE_CONFIG: CacheConfig = {
     'CACHE_TYPE': 'redis',
     'CACHE_DEFAULT_TIMEOUT': 24*60*60,
     'CACHE_KEY_PREFIX': 'thumbnail_',
     'CACHE_NO_NULL_WARNING': True,
-    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
+    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}"
 }
 WEBDRIVER_TYPE= "chrome"
 # for older versions this was  EMAIL_REPORTS_WEBDRIVER = "chrome"
@@ -119,6 +168,20 @@ WEBDRIVER_OPTION_ARGS = [
         "--disable-setuid-sandbox",
         "--disable-extensions",
         ]
+
+EXPLORE_FORM_DATA_CACHE_CONFIG: CacheConfig = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_KEY_PREFIX': 'superset_form_',
+    'CACHE_NO_NULL_WARNING': True,
+    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}"
+}
+
+FILTER_STATE_CACHE_CONFIG: CacheConfig = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_KEY_PREFIX': 'superset_filter_',
+    'CACHE_NO_NULL_WARNING': True,
+    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}"
+}
 
 #
 # Optionally import superset_config_docker.py (which will have been included on
