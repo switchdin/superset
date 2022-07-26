@@ -487,8 +487,8 @@ COMMON_BOOTSTRAP_OVERRIDES_FUNC: Callable[
 # example code for "My custom warm to hot" color scheme
 EXTRA_CATEGORICAL_COLOR_SCHEMES = [
      {
-         "id": 'switchdinColours',
-         "description": '',
+         "id": 'switchdin',
+         "description": 'Switchdin Colours',
          "label": 'SwitchDin',
          "isDefault": True,
          "colors":
@@ -505,7 +505,7 @@ EXTRA_CATEGORICAL_COLOR_SCHEMES = [
      # },
      {
          "id": 'ausgrid',
-         "description": '',
+         "description": 'AusGrid Colours',
          "label": 'AusGrid',
          "isDefault": False,
          "colors":
@@ -513,7 +513,7 @@ EXTRA_CATEGORICAL_COLOR_SCHEMES = [
      },
      {
          "id": 'jacana',
-         "description": '',
+         "description": 'Jacana Colours',
          "label": 'Jacana',
          "isDefault": False,
          "colors":
@@ -521,7 +521,7 @@ EXTRA_CATEGORICAL_COLOR_SCHEMES = [
      },
      {
          "id": 'origin',
-         "description": '',
+         "description": 'Origin Colours',
          "label": 'Origin',
          "isDefault": False,
          "colors":
@@ -529,7 +529,7 @@ EXTRA_CATEGORICAL_COLOR_SCHEMES = [
      },
      {
          "id": 'sapn',
-         "description": '',
+         "description": 'SAPN Colours',
          "label": 'SAPN',
          "isDefault": False,
          "colors":
@@ -537,7 +537,7 @@ EXTRA_CATEGORICAL_COLOR_SCHEMES = [
      },
      {
          "id": 'simplyenergy',
-         "description": '',
+         "description": 'Simply Energy Colours',
          "label": 'Simply Energy',
          "isDefault": False,
          "colors":
@@ -545,12 +545,21 @@ EXTRA_CATEGORICAL_COLOR_SCHEMES = [
      },
      {
          "id": 'yurika',
-         "description": '',
+         "description": 'Yurika Colours',
          "label": 'Yurika',
          "isDefault": False,
          "colors":
           ['#5e2590', '#b12d76', '#f03f52', '#F37229', '#a13421']
-     }]
+     },
+     {
+        "id": 'synergy',
+        "description": 'Synergy Colours',
+        "label": 'Synergy',
+        "isDefault": False,
+        "colors":
+        ['#009B77', '#00968F', '#00A9E0', '#41B6E6']
+     }
+    ]
 
 # This is merely a default
 # EXTRA_CATEGORICAL_COLOR_SCHEMES: List[Dict[str, Any]] = []
@@ -1231,6 +1240,7 @@ SQL_VALIDATORS_BY_ENGINE = {
 # in `superset/db_engine_specs/`.
 PREFERRED_DATABASES: List[str] = [
     "PostgreSQL",
+    "Druid",
     "Presto",
     "MySQL",
     "SQLite",
