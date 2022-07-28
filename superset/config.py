@@ -580,7 +580,7 @@ THEME_OVERRIDES = {
       # "light5": '#F3F8FA',
     },
     "secondary": {
-        "base": 'orange',
+        "base": '#007564',
         "dark1": '#363E63',
         "dark2": '#282E4A',
         "dark3": '#1B1F31',
@@ -1240,10 +1240,11 @@ SQL_VALIDATORS_BY_ENGINE = {
 # in `superset/db_engine_specs/`.
 PREFERRED_DATABASES: List[str] = [
     "PostgreSQL",
-    "Druid",
-    "Presto",
+    "Apache Druid",
+    "Google Sheets",
     "MySQL",
     "SQLite",
+    "Presto",
     # etc.
 ]
 # When adding a new database we try to connect to it. Depending on which parameters are
