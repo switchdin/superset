@@ -101,7 +101,7 @@ PACKAGE_JSON_FILE = pkg_resources.resource_filename(
 #     "type": "image/png"
 #     "rel": "icon"
 # },
-FAVICONS = [{"href": "/static/assets/images/SwitchdinIcon.png"}]
+FAVICONS = [{"href": "/static/assets/images/SwitchDinStormCloud.png"}]
 
 
 def _try_json_readversion(filepath: str) -> Optional[str]:
@@ -244,7 +244,7 @@ PROXY_FIX_CONFIG = {"x_for": 1, "x_proto": 1, "x_host": 1, "x_port": 1, "x_prefi
 APP_NAME = "StormCloud IQ"
 
 # Specify the App icon
-APP_ICON = "/static/assets/images/switchdin_logo_transparent.png"
+APP_ICON = "/static/assets/images/StormcloudIQ_logo_RGB_COLOUR.png"
 
 # Specify where clicking the logo would take the user
 # e.g. setting it to '/' would take the user to '/superset/welcome/'
