@@ -79,8 +79,7 @@ def call(Map args) {
             sh "docker tag ${this.ver} ${this.test_image}"
           }
           stage('Push Image for Scan'){
-            sh "echo 'vRMzx8T4PT9OEAdFADwQZ' |docker login --username jenkins --password-stdin docker-push.k8s.switchdinlocal"
-            sh "docker push ${this.test_image}"
+            
           }
           stage('Analyse Image') {
             try {
