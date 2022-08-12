@@ -15,11 +15,6 @@ def call(Map args) {
       hostPathVolume(
         hostPath: '/var/run/docker.sock', 
         mountPath: '/var/run/docker.sock'
-      ),
-      persistentVolumeClaim(
-        claimName: 'node-pv-claim', 
-        mountPath: '/opt/jenkins/.npm', 
-        readOnly: false
       )
     ]
   
