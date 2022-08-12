@@ -99,6 +99,23 @@ COPY --from=superset-py /usr/local/bin/gunicorn /usr/local/bin/celery /usr/local
 COPY --from=superset-node /app/superset/static/assets /app/superset/static/assets
 COPY --from=superset-node /app/superset-frontend /app/superset-frontend
 
+# Install Web Driver
+USER root
+
+RUN apt-get update && \
+    wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    apt-get install -y --no-install-recommends ./google-chrome-stable_current_amd64.deb && \
+    rm -f google-chrome-stable_current_amd64.deb
+
+RUN export CHROMEDRIVER_VERSION=$(curl --silent https://chromedriver.storage.googleapis.com/LATEST_RELEASE) && \
+    wget -q https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip && \
+    unzip -o chromedriver_linux64.zip -d /usr/bin && \
+    chmod 755 /usr/bin/chromedriver && \
+    rm -f chromedriver_linux64.zip
+
+RUN pip install --no-cache gevent psycopg2 redis
+
+# USER superset
 ## Lastly, let's install superset itself
 COPY superset /app/superset
 COPY setup.py MANIFEST.in README.md /app/
@@ -170,21 +187,21 @@ CMD /app/docker/docker-ci.sh
 ######################################################################
 # WEBDRIVER Extension
 ######################################################################
-FROM switchdin/superset:latest
+# FROM switchdin/superset:latest
 
-USER root
+# USER root
 
-RUN apt-get update && \
-    wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt-get install -y --no-install-recommends ./google-chrome-stable_current_amd64.deb && \
-    rm -f google-chrome-stable_current_amd64.deb
+# RUN apt-get update && \
+#     wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+#     apt-get install -y --no-install-recommends ./google-chrome-stable_current_amd64.deb && \
+#     rm -f google-chrome-stable_current_amd64.deb
 
-RUN export CHROMEDRIVER_VERSION=$(curl --silent https://chromedriver.storage.googleapis.com/LATEST_RELEASE) && \
-    wget -q https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip && \
-    unzip -o chromedriver_linux64.zip -d /usr/bin && \
-    chmod 755 /usr/bin/chromedriver && \
-    rm -f chromedriver_linux64.zip
+# RUN export CHROMEDRIVER_VERSION=$(curl --silent https://chromedriver.storage.googleapis.com/LATEST_RELEASE) && \
+#     wget -q https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip && \
+#     unzip -o chromedriver_linux64.zip -d /usr/bin && \
+#     chmod 755 /usr/bin/chromedriver && \
+#     rm -f chromedriver_linux64.zip
 
-RUN pip install --no-cache gevent psycopg2 redis
+# RUN pip install --no-cache gevent psycopg2 redis
 
-USER superset
+# USER superset
