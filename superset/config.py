@@ -119,6 +119,40 @@ def _try_json_readsha(filepath: str, length: int) -> Optional[str]:
     except Exception:  # pylint: disable=broad-except
         return None
 
+def get_env_variable(var_name: str, default: Optional[str] = None) -> str:
+    """Get the environment variable or raise exception."""
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        if default is not None:
+            return default
+        else:
+            error_msg = "The environment variable {} was missing, abort...".format(
+                var_name
+            )
+            raise EnvironmentError(error_msg)
+
+DATABASE_DIALECT = get_env_variable("DATABASE_DIALECT")
+DATABASE_USER = get_env_variable("DATABASE_USER")
+DATABASE_PASSWORD = get_env_variable("DATABASE_PASSWORD")
+DATABASE_HOST = get_env_variable("DATABASE_HOST")
+DATABASE_PORT = get_env_variable("DATABASE_PORT")
+DATABASE_DB = get_env_variable("DATABASE_DB")
+
+# The SQLAlchemy connection string.
+SQLALCHEMY_DATABASE_URI = "%s://%s:%s@%s:%s/%s" % (
+    DATABASE_DIALECT,
+    DATABASE_USER,
+    DATABASE_PASSWORD,
+    DATABASE_HOST,
+    DATABASE_PORT,
+    DATABASE_DB,
+)
+
+REDIS_HOST = get_env_variable("REDIS_HOST")
+REDIS_PORT = get_env_variable("REDIS_PORT")
+REDIS_CELERY_DB = get_env_variable("REDIS_CELERY_DB", "0")
+REDIS_RESULTS_DB = get_env_variable("REDIS_RESULTS_DB", "1")
 
 #
 # If True, we will skip the call to load the logger config found in alembic.init
@@ -665,28 +699,62 @@ IMG_UPLOAD_URL = "/static/uploads/"
 # each cache config.
 CACHE_DEFAULT_TIMEOUT = int(timedelta(days=1).total_seconds())
 
+FILTER_STATE_CACHE_CONFIG: CacheConfig = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_KEY_PREFIX': 'superset_filter_',
+    'CACHE_NO_NULL_WARNING': True,
+    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}"
+}
+
+PREFERRED_DATABASES: List[str] = [
+    "PostgreSQL",
+    "Apache Druid",
+    "Google Sheets",
+    "MySQL",
+    "SQLite",
+    "Trino",
+    # etc.
+]
+
 # Default cache for Superset objects
-CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "NullCache"}
+CACHE_CONFIG: CacheConfig = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_KEY_PREFIX': 'superset_filter_',
+    'CACHE_NO_NULL_WARNING': True,
+    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}"
+}
 
 # Cache for datasource metadata and query results
-DATA_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "NullCache"}
+DATA_CACHE_CONFIG: CacheConfig = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_KEY_PREFIX': 'superset_filter_',
+    'CACHE_NO_NULL_WARNING': True,
+    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}"
+}
 
 # Cache for dashboard filter state (`CACHE_TYPE` defaults to `SimpleCache` when
 #  running in debug mode unless overridden)
 FILTER_STATE_CACHE_CONFIG: CacheConfig = {
-    "CACHE_DEFAULT_TIMEOUT": int(timedelta(days=90).total_seconds()),
     # should the timeout be reset when retrieving a cached value
-    "REFRESH_TIMEOUT_ON_RETRIEVAL": True,
 }
-
+FILTER_STATE_CACHE_CONFIG: CacheConfig = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_KEY_PREFIX': 'superset_filter_',
+    'CACHE_NO_NULL_WARNING': True,
+    "CACHE_DEFAULT_TIMEOUT": int(timedelta(days=90).total_seconds()),
+    "REFRESH_TIMEOUT_ON_RETRIEVAL": True,
+    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}"
+}
 # Cache for explore form data state (`CACHE_TYPE` defaults to `SimpleCache` when
 #  running in debug mode unless overridden)
 EXPLORE_FORM_DATA_CACHE_CONFIG: CacheConfig = {
-    "CACHE_DEFAULT_TIMEOUT": int(timedelta(days=7).total_seconds()),
-    # should the timeout be reset when retrieving a cached value
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_KEY_PREFIX': 'superset_form_',
+    'CACHE_NO_NULL_WARNING': True,
+    "CACHE_DEFAULT_TIMEOUT": int(timedelta(days=90).total_seconds()),
     "REFRESH_TIMEOUT_ON_RETRIEVAL": True,
+    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}"
 }
-
 # store cache keys by datasource UID (via CacheKey) for custom processing/invalidation
 STORE_CACHE_KEYS_IN_METADATA_DB = False
 
@@ -825,36 +893,37 @@ DASHBOARD_AUTO_REFRESH_MODE: Literal["fetch", "force"] = "force"
 # http://docs.celeryproject.org/en/latest/getting-started/brokers/index.html
 
 
-class CeleryConfig:  # pylint: disable=too-few-public-methods
-    broker_url = "sqla+sqlite:///celerydb.sqlite"
-    imports = ("superset.sql_lab",)
-    result_backend = "db+sqlite:///celery_results.sqlite"
-    worker_log_level = "DEBUG"
-    worker_prefetch_multiplier = 1
-    task_acks_late = False
+class CeleryConfig:
+    broker_url = 'redis://%s:%s/0' % (REDIS_HOST, REDIS_PORT)
+    imports = ('superset.sql_lab', "superset.tasks", "superset.tasks.thumbnails", )
+    result_backend = 'redis://%s:%s/0' % (REDIS_HOST, REDIS_PORT)
+    worker_prefetch_multiplier = 10
+    task_acks_late = True
     task_annotations = {
-        "sql_lab.get_sql_results": {"rate_limit": "100/s"},
-        "email_reports.send": {
-            "rate_limit": "1/s",
-            "time_limit": int(timedelta(seconds=120).total_seconds()),
-            "soft_time_limit": int(timedelta(seconds=150).total_seconds()),
-            "ignore_result": True,
+        'sql_lab.get_sql_results': {
+            'rate_limit': '100/s',
+        },
+        'email_reports.send': {
+            'rate_limit': '1/s',
+            'time_limit': 600,
+            'soft_time_limit': 600,
+            'ignore_result': True,
         },
     }
     beat_schedule = {
-        "email_reports.schedule_hourly": {
-            "task": "email_reports.schedule_hourly",
-            "schedule": crontab(minute=1, hour="*"),
+        'reports.scheduler': {
+            'task': 'reports.scheduler',
+            'schedule': crontab(minute='*', hour='*'),
         },
-        "reports.scheduler": {
-            "task": "reports.scheduler",
-            "schedule": crontab(minute="*", hour="*"),
-        },
-        "reports.prune_log": {
-            "task": "reports.prune_log",
-            "schedule": crontab(minute=0, hour=0),
+        'reports.prune_log': {
+            'task': 'reports.prune_log',
+            'schedule': crontab(minute=0, hour=0),
         },
     }
+CELERY_CONFIG = CeleryConfig
+
+SCREENSHOT_LOCATE_WAIT = 100
+SCREENSHOT_LOAD_WAIT = 600
 
 
 CELERY_CONFIG = CeleryConfig  # pylint: disable=invalid-name
@@ -1182,7 +1251,17 @@ SLACK_PROXY = None
 # chrome:
 #   Requires: headless chrome
 #   Limitations: unable to generate screenshots of elements
-WEBDRIVER_TYPE = "firefox"
+WEBDRIVER_TYPE = "chrome"
+WEBDRIVER_OPTION_ARGS = [
+    "--force-device-scale-factor=2.0",
+    "--high-dpi-support=2.0",
+    "--headless",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-extensions",
+]
 
 # Window size - this will impact the rendering of the data
 WEBDRIVER_WINDOW = {
@@ -1204,7 +1283,7 @@ WEBDRIVER_CONFIGURATION: Dict[Any, Any] = {"service_log_path": "/dev/null"}
 WEBDRIVER_OPTION_ARGS = ["--headless", "--marionette"]
 
 # The base URL to query for accessing the user interface
-WEBDRIVER_BASEURL = "http://0.0.0.0:8080/"
+WEBDRIVER_BASEURL = "http://iq.switchdin.com:8080/"
 # The base URL for the email report hyperlinks.
 WEBDRIVER_BASEURL_USER_FRIENDLY = WEBDRIVER_BASEURL
 # Time selenium will wait for the page to load and render for the email report.
@@ -1244,7 +1323,7 @@ PREFERRED_DATABASES: List[str] = [
     "Google Sheets",
     "MySQL",
     "SQLite",
-    "Presto",
+    "Trino",
     # etc.
 ]
 # When adding a new database we try to connect to it. Depending on which parameters are
