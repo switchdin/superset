@@ -763,7 +763,7 @@ LOGGING_CONFIGURATOR = DefaultLoggingConfigurator()
 # Console Log Settings
 
 LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s:%(message)s"
-LOG_LEVEL = "DEBUG"
+LOG_LEVEL = "ERROR"
 
 # ---------------------------------------------------
 # Enable Time Rotate Log Handler
@@ -771,7 +771,7 @@ LOG_LEVEL = "DEBUG"
 # LOG_LEVEL = DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 ENABLE_TIME_ROTATE = False
-TIME_ROTATE_LOG_LEVEL = "DEBUG"
+TIME_ROTATE_LOG_LEVEL = "ERROR"
 FILENAME = os.path.join(DATA_DIR, "superset.log")
 ROLLOVER = "midnight"
 INTERVAL = 1
@@ -827,7 +827,7 @@ class CeleryConfig:  # pylint: disable=too-few-public-methods
     broker_url = "sqla+sqlite:///celerydb.sqlite"
     imports = ("superset.sql_lab",)
     result_backend = "db+sqlite:///celery_results.sqlite"
-    worker_log_level = "DEBUG"
+    worker_log_level = "ERROR"
     worker_prefetch_multiplier = 1
     task_acks_late = False
     task_annotations = {
