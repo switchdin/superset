@@ -13,6 +13,6 @@
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
-gsheetsdb
+shillelagh[gsheetsapi]
 sqlalchemy-trino
 sqlalchemy_dremio
