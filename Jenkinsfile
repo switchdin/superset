@@ -61,8 +61,8 @@ def call(Map args) {
 
                 // }
                 stage('Docker Build') {
-                    this.ver = "ecr.aws.switchdinlocal/switchdin/superset:${branch}-${BUILD_ID}"
-                    this.latest = "ecr.aws.switchdinlocal/switchdin/superset:latest"
+                    this.ver = "ecr.k8s.infra.switchdin.team/switchdin/superset:${branch}-${BUILD_ID}"
+                    this.latest = "ecr.k8s.infra.switchdin.team/switchdin/superset:latest"
                     this.test_image = "docker-push.k8s.switchdinlocal/test/switchdin/superset:latest"
                     currentBuild.description = this.ver
                     sh "docker build -t ${this.ver} . "
