@@ -397,7 +397,7 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     # Feature is under active development and breaking changes are expected
     "DASHBOARD_NATIVE_FILTERS_SET": False,
     "DASHBOARD_FILTERS_EXPERIMENTAL": False,
-    "GLOBAL_ASYNC_QUERIES": True,
+    "GLOBAL_ASYNC_QUERIES": False,
     "VERSIONED_EXPORT": True,
     "EMBEDDED_SUPERSET": False,
     # Enables Alerts and reports new implementation
